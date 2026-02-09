@@ -23,11 +23,13 @@ function getRenderedImageBounds(
   let renderedH: number;
 
   if (imageAR > containerAR) {
-    renderedH = containerH;
-    renderedW = containerH * imageAR;
-  } else {
+    // Image is "wider" than container -> width fills container, height is letterboxed
     renderedW = containerW;
     renderedH = containerW / imageAR;
+  } else {
+    // Image is "taller" than container -> height fills container, width is pillarboxed
+    renderedH = containerH;
+    renderedW = containerH * imageAR;
   }
 
   const x = (containerW - renderedW) / 2;
@@ -138,11 +140,18 @@ export const Nippelboard = () => {
       ref={containerRef}
       className="relative w-screen h-screen overflow-hidden bg-black touch-none select-none"
     >
-      {/* Layer 1: Base image */}
+      {/* Layer 0: Blurred background to fill screen */}
+      <img
+        src="/assets/images/board_off.webp"
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover blur-3xl scale-110 opacity-40 z-0 pointer-events-none"
+      />
+
+      {/* Layer 1: Base image (Full visibility) */}
       <img
         src="/assets/images/board_off.webp"
         alt="Board"
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-10"
+        className="absolute inset-0 w-full h-full object-contain pointer-events-none z-10"
       />
 
       {/* Layer 2: Glow image with soft radial mask */}
@@ -160,7 +169,7 @@ export const Nippelboard = () => {
           <img
             src="/assets/images/board_on.webp"
             alt="Board Glow"
-            className="w-full h-full object-fill"
+            className="w-full h-full object-contain"
           />
         </div>
       )}
