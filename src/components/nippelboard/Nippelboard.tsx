@@ -29,6 +29,7 @@ export const Nippelboard = () => {
   } = useGameStore();
 
   const [loading, setLoading] = useState(true);
+  const [debug, setDebug] = useState(false);
   const [recordingId, setRecordingId] = useState<number | null>(null);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
@@ -178,8 +179,10 @@ export const Nippelboard = () => {
                 "relative transition-all active:scale-95 flex items-center justify-center rounded-xl",
                 isRecordingMode ? "border-2 border-red-500/30 hover:border-red-500 bg-red-500/5 hover:bg-red-500/10" : "hover:bg-white/5",
                 recordingId === i && "animate-pulse border-2 border-red-500 bg-red-500/20",
-                activeButtonIndex === i && !isRecordingMode && "bg-white/10"
+                activeButtonIndex === i && !isRecordingMode && "bg-white/10",
+                debug && "border border-white/40 bg-white/10"
               )}
+              aria-label={`Button ${i + 1}`}
             >
               {isRecordingMode && !recordingId && (
                 <Mic className="w-5 h-5 text-zinc-500 opacity-40" />
@@ -192,11 +195,24 @@ export const Nippelboard = () => {
       {/* Floating UI Controls */}
       <div className="absolute bottom-6 right-6 flex gap-4 z-40">
         <button
+          onClick={() => setDebug(!debug)}
+          title="Toggle Debug Grid"
+          className={cn(
+            "p-4 rounded-full shadow-lg transition-all",
+            debug ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"
+          )}
+          aria-label="Toggle Debug Grid"
+        >
+          <Play className="w-6 h-6" />
+        </button>
+        <button
           onClick={() => setRecordingMode(!isRecordingMode)}
+          title="Toggle Recording Mode"
           className={cn(
             "p-4 rounded-full shadow-lg transition-all",
             isRecordingMode ? "bg-red-600 text-white animate-pulse" : "bg-zinc-800 text-zinc-400 hover:text-white"
           )}
+          aria-label="Toggle Recording Mode"
         >
           {isRecordingMode ? <X className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
         </button>
