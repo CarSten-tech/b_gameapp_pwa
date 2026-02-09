@@ -5,12 +5,15 @@ export interface ButtonRegion {
   height: number;
 }
 
-// Precision tuning for object-cover (Full Screen)
-const PADDING_TOP = 17.5;    // Pushes grid down
-const PADDING_BOTTOM = 13.5; // Pushes grid up
-const PADDING_LEFT = 9.5;   // Pushes from left
-const PADDING_RIGHT = 9.5;  // Pushes from right
-const GAP = 1.2;             // Slightly tighter gap
+// Precision tuning based on Screenshot (Step Id: 411)
+// The red boxes in the screenshot are slightly inconsistent with the button positions.
+// We need to move the grid DOWN and make it slightly taller to cover the label too.
+const PADDING_TOP = 13.0;    
+const PADDING_BOTTOM = 8.0; 
+const PADDING_LEFT = 8.8;   
+const PADDING_RIGHT = 8.8;  
+const GAP_X = 1.0;
+const GAP_Y = 1.5;
 
 const ROWS = 3;
 const COLS = 5;
@@ -20,19 +23,28 @@ const calculateRegions = (): ButtonRegion[] => {
   const contentWidth = 100 - PADDING_LEFT - PADDING_RIGHT;
   const contentHeight = 100 - PADDING_TOP - PADDING_BOTTOM;
   
-  const cellWidth = (contentWidth - (COLS - 1) * GAP) / COLS;
-  const cellHeight = (contentHeight - (ROWS - 1) * GAP) / ROWS;
+  const cellWidth = (contentWidth - (COLS - 1) * GAP_X) / COLS;
+  const cellHeight = (contentHeight - (ROWS - 1) * GAP_Y) / ROWS;
 
+  for (let r = 0; r < ROWS; r++) {
+    for (let i_r = 0; i_r < ROWS; i_r++) {
+        // We iterate r for rows
+    }
+    // Correct loop
+  }
+  
+  // Re-writing the logic clearly
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       regions.push({
-        top: PADDING_TOP + r * (cellHeight + GAP),
-        left: PADDING_LEFT + c * (cellWidth + GAP),
+        top: PADDING_TOP + r * (cellHeight + GAP_Y),
+        left: PADDING_LEFT + c * (cellWidth + GAP_X),
         width: cellWidth,
         height: cellHeight
       });
     }
   }
+  
   return regions;
 };
 
