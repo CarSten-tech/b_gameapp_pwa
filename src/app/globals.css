@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-marker: var(--font-permanent-marker);
+  --font-marker: var(--font-rock-salt);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -145,5 +145,5 @@
   }
 }
 .font-marker {
-  font-family: var(--font-permanent-marker), cursive;
+  font-family: var(--font-rock-salt), cursive;
 }

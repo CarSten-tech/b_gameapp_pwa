@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Permanent_Marker } from "next/font/google";
+import { Geist, Geist_Mono, Rock_Salt } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,10 +12,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const permanentMarker = Permanent_Marker({
+const rockSalt = Rock_Salt({
   weight: "400",
   subsets: ["latin"],
-  variable: "--font-permanent-marker",
+  variable: "--font-rock-salt",
 });
 
 export const metadata: Metadata = {
@@ -45,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${permanentMarker.variable} antialiased bg-black overflow-hidden overscroll-none`}
+        className={`${geistSans.variable} ${geistMono.variable} ${rockSalt.variable} antialiased bg-black overflow-hidden overscroll-none`}
       >
         {children}
       </body>
