@@ -1,154 +1,216 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useGameStore } from '@/store/game-store';
 import { useAudioEngine } from '@/hooks/use-audio-engine';
 import { cn } from '@/lib/utils';
 import { BUTTON_REGIONS, SOUND_MAPPING } from '@/constants/board-config';
-import { Play } from 'lucide-react';
+import { Bug } from 'lucide-react';
 
-const DEBUG_MODE_DEFAULT = false;
+/**
+ * Calculates the actual rendered bounds of an image displayed with object-cover.
+ * Returns { x, y, width, height } in pixels relative to the container.
+ */
+function getRenderedImageBounds(
+  containerW: number,
+  containerH: number,
+  imageNaturalW: number,
+  imageNaturalH: number
+) {
+  const containerAR = containerW / containerH;
+  const imageAR = imageNaturalW / imageNaturalH;
+
+  let renderedW: number;
+  let renderedH: number;
+
+  if (imageAR > containerAR) {
+    // Image is wider than container → height fills, width overflows
+    renderedH = containerH;
+    renderedW = containerH * imageAR;
+  } else {
+    // Image is taller than container → width fills, height overflows
+    renderedW = containerW;
+    renderedH = containerW / imageAR;
+  }
+
+  // object-cover centers the image
+  const x = (containerW - renderedW) / 2;
+  const y = (containerH - renderedH) / 2;
+
+  return { x, y, width: renderedW, height: renderedH };
+}
 
 export const Nippelboard = () => {
-  const { 
-    activeButtonIndex, 
-    setActiveButton, 
-  } = useGameStore();
+  const { activeButtonIndex, setActiveButton } = useGameStore();
 
   const [loading, setLoading] = useState(true);
-  const [debug, setDebug] = useState(DEBUG_MODE_DEFAULT);
+  const [debug, setDebug] = useState(false);
+  const [imageBounds, setImageBounds] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [imageNaturalSize, setImageNaturalSize] = useState<{ w: number; h: number } | null>(null);
+
+  const containerRef = useRef<HTMLDivElement>(null);
   const { loadSoundFromUrl, playSound, isLoaded, initContext } = useAudioEngine();
 
-  // Load static sounds from public/assets/audio/
+  // Load static sounds
   useEffect(() => {
     const loadSounds = async () => {
-      console.log('Nippelboard: Starting to load sounds...', SOUND_MAPPING);
       try {
-        const loadPromises = Object.entries(SOUND_MAPPING).map(async ([id, filename]) => {
+        const promises = Object.entries(SOUND_MAPPING).map(async ([id, filename]) => {
           try {
-            const url = `/assets/audio/${filename}`;
-            console.log(`Nippelboard: Loading sound ${id} from ${url}`);
-            await loadSoundFromUrl(parseInt(id), url);
-            console.log(`Nippelboard: Successfully loaded sound ${id}`);
-          } catch (soundErr) {
-            console.error(`Nippelboard: Failed to load sound ${id} (${filename}):`, soundErr);
+            await loadSoundFromUrl(parseInt(id), `/assets/audio/${filename}`);
+          } catch (e) {
+            console.error(`Failed to load sound ${id}:`, e);
           }
         });
-        
-        // Use a timeout to ensure the app doesn't hang forever
         const timeout = new Promise((resolve) => setTimeout(resolve, 5000));
-        await Promise.race([Promise.all(loadPromises), timeout]);
-      } catch (err) {
-        console.error('Nippelboard: Critical error during sound loading sequence:', err);
+        await Promise.race([Promise.all(promises), timeout]);
+      } catch (e) {
+        console.error('Sound loading error:', e);
       } finally {
-        console.log('Nippelboard: Loading sequence finished.');
         setLoading(false);
       }
     };
     loadSounds();
   }, [loadSoundFromUrl]);
 
+  // Get natural image dimensions on mount
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      setImageNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
+    };
+    img.src = '/assets/images/board_off.webp';
+  }, []);
+
+  // Recalculate rendered image bounds on resize
+  useEffect(() => {
+    if (!imageNaturalSize) return;
+
+    const update = () => {
+      const el = containerRef.current;
+      if (!el) return;
+      const bounds = getRenderedImageBounds(
+        el.clientWidth,
+        el.clientHeight,
+        imageNaturalSize.w,
+        imageNaturalSize.h
+      );
+      setImageBounds(bounds);
+    };
+
+    update();
+
+    const observer = new ResizeObserver(update);
+    if (containerRef.current) observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
+  }, [imageNaturalSize]);
+
   const handleButtonClick = async (index: number) => {
-    // Ensure AudioContext is unlocked (required for iOS)
     await initContext();
-
-    if (!isLoaded(index)) {
-      console.log(`Sound for button ${index} not loaded or mapped.`);
-      return;
-    }
-
+    if (!isLoaded(index)) return;
     setActiveButton(index);
-    await playSound(index, () => {
-      setActiveButton(null);
-    });
+    await playSound(index, () => setActiveButton(null));
   };
 
+  // Clip-path using circle(), coordinates relative to the overlay div
   const getClipPath = (index: number | null) => {
-    if (index === null) return 'circle(0% at 0% 0%)';
+    if (index === null || !imageBounds) return 'circle(0% at 0% 0%)';
     const r = BUTTON_REGIONS[index];
     const centerX = r.left + r.width / 2;
     const centerY = r.top + r.height / 2;
-    // Using width/2 as radius for a circular glow. 
-    // We additive a tiny bit (0.5%) for a softer bleed if needed, 
-    // but user asked for "exakt", so we stay precise.
-    const radius = r.width / 2; 
+    const radius = Math.min(r.width, r.height) / 2;
     return `circle(${radius}% at ${centerX}% ${centerY}%)`;
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black touch-none select-none">
-      
-      {/* Board Container - Fullscreen */}
-      <div className="relative w-full h-full overflow-hidden">
-        
-        {/* Layer 1: Base image (board_off) */}
-        <div className="absolute inset-0 z-10">
-           <img 
-            src="/assets/images/board_off.webp" 
-            alt="Board" 
-            className="w-full h-full object-cover pointer-events-none"
-           />
-        </div>
+    <div
+      ref={containerRef}
+      className="relative w-screen h-screen overflow-hidden bg-black touch-none select-none"
+    >
+      {/* Layer 1: Base image (board_off) */}
+      <img
+        src="/assets/images/board_off.webp"
+        alt="Board"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-10"
+      />
 
-        {/* Layer 2: Glow image (board_on) with clipping */}
-        <div 
-          className="absolute inset-0 z-20 transition-opacity duration-75 pointer-events-none"
-          style={{ 
+      {/* Layer 2: Glow image (board_on) — clipped to the active button circle */}
+      {imageBounds && (
+        <div
+          className="absolute z-20 pointer-events-none transition-opacity duration-75"
+          style={{
+            left: imageBounds.x,
+            top: imageBounds.y,
+            width: imageBounds.width,
+            height: imageBounds.height,
             opacity: activeButtonIndex !== null ? 1 : 0,
-            clipPath: getClipPath(activeButtonIndex)
+            clipPath: getClipPath(activeButtonIndex),
           }}
         >
-          <img 
-            src="/assets/images/board_on.webp" 
-            alt="Board Glow" 
-            className="w-full h-full object-cover"
+          <img
+            src="/assets/images/board_on.webp"
+            alt="Board Glow"
+            className="w-full h-full object-fill"
           />
         </div>
+      )}
 
-        {/* Layer 3: Interaction Grid (Hotspots) */}
-        <div className="absolute inset-0 z-30">
+      {/* Layer 3: Interaction Hotspots — positioned over the rendered image */}
+      {imageBounds && (
+        <div
+          className="absolute z-30"
+          style={{
+            left: imageBounds.x,
+            top: imageBounds.y,
+            width: imageBounds.width,
+            height: imageBounds.height,
+          }}
+        >
           {BUTTON_REGIONS.map((region, i) => (
             <button
               key={i}
               onClick={() => handleButtonClick(i)}
               className={cn(
-                "absolute transition-transform active:scale-95 touch-manipulation outline-none rounded-full",
-                debug && "bg-red-500/20 border border-red-500/50 z-50",
-                !isLoaded(i) && "cursor-default"
+                'absolute rounded-full transition-transform active:scale-95 touch-manipulation outline-none',
+                debug && 'bg-red-500/25 border-2 border-red-400',
+                !isLoaded(i) && 'cursor-default'
               )}
               style={{
                 top: `${region.top}%`,
                 left: `${region.left}%`,
                 width: `${region.width}%`,
                 height: `${region.height}%`,
-                WebkitTapHighlightColor: 'transparent'
+                WebkitTapHighlightColor: 'transparent',
               }}
               aria-label={`Pad ${i + 1}`}
             />
           ))}
         </div>
-      </div>
+      )}
 
-      {/* Floating UI Controls */}
-      <div className="absolute top-4 right-4 z-40 flex gap-2 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)]">
-        <button
-          onClick={() => setDebug(!debug)}
-          className={cn(
-            "p-3 rounded-full shadow-lg transition-all border border-white/10",
-            debug ? "bg-blue-600 text-white" : "bg-zinc-900/80 text-zinc-400 hover:text-white"
-          )}
-          title="Debug Modus"
-          aria-label="Toggle Debug Mode"
-        >
-          <Play className="w-5 h-5" />
-        </button>
-      </div>
+      {/* Debug toggle */}
+      <button
+        onClick={() => setDebug(!debug)}
+        className={cn(
+          'absolute top-4 right-4 z-40 p-3 rounded-full shadow-lg transition-all border border-white/10',
+          debug
+            ? 'bg-blue-600 text-white'
+            : 'bg-zinc-900/80 text-zinc-400 hover:text-white'
+        )}
+        aria-label="Toggle Debug Mode"
+      >
+        <Bug className="w-5 h-5" />
+      </button>
 
+      {/* Loading overlay */}
       {loading && (
         <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
           <div className="flex flex-col items-center gap-4">
-             <div className="w-10 h-10 border-4 border-zinc-700 border-t-white rounded-full animate-spin" />
-             <p className="text-zinc-500 font-medium tracking-widest uppercase text-xs">Nippelboard lädt...</p>
+            <div className="w-10 h-10 border-4 border-zinc-700 border-t-white rounded-full animate-spin" />
+            <p className="text-zinc-500 font-medium tracking-widest uppercase text-xs">
+              Nippelboard lädt...
+            </p>
           </div>
         </div>
       )}
