@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '@/store/game-store';
 import { useAudioEngine } from '@/hooks/use-audio-engine';
 import { cn } from '@/lib/utils';
@@ -8,8 +8,7 @@ import { BUTTON_REGIONS, SOUND_MAPPING } from '@/constants/board-config';
 import { Bug } from 'lucide-react';
 
 /**
- * Calculates the actual rendered bounds of an image displayed with object-cover.
- * Returns { x, y, width, height } in pixels relative to the container.
+ * Calculates where object-cover actually renders the image.
  */
 function getRenderedImageBounds(
   containerW: number,
@@ -24,16 +23,13 @@ function getRenderedImageBounds(
   let renderedH: number;
 
   if (imageAR > containerAR) {
-    // Image is wider than container → height fills, width overflows
     renderedH = containerH;
     renderedW = containerH * imageAR;
   } else {
-    // Image is taller than container → width fills, height overflows
     renderedW = containerW;
     renderedH = containerW / imageAR;
   }
 
-  // object-cover centers the image
   const x = (containerW - renderedW) / 2;
   const y = (containerH - renderedH) / 2;
 
@@ -45,24 +41,28 @@ export const Nippelboard = () => {
 
   const [loading, setLoading] = useState(true);
   const [debug, setDebug] = useState(false);
-  const [imageBounds, setImageBounds] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
-  const [imageNaturalSize, setImageNaturalSize] = useState<{ w: number; h: number } | null>(null);
+  const [imageBounds, setImageBounds] = useState<{
+    x: number; y: number; width: number; height: number;
+  } | null>(null);
+  const [imageNaturalSize, setImageNaturalSize] = useState<{
+    w: number; h: number;
+  } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const { loadSoundFromUrl, playSound, isLoaded, initContext } = useAudioEngine();
 
   // Load static sounds
   useEffect(() => {
-    const loadSounds = async () => {
+    const load = async () => {
       try {
-        const promises = Object.entries(SOUND_MAPPING).map(async ([id, filename]) => {
+        const promises = Object.entries(SOUND_MAPPING).map(async ([id, fn]) => {
           try {
-            await loadSoundFromUrl(parseInt(id), `/assets/audio/${filename}`);
+            await loadSoundFromUrl(parseInt(id), `/assets/audio/${fn}`);
           } catch (e) {
             console.error(`Failed to load sound ${id}:`, e);
           }
         });
-        const timeout = new Promise((resolve) => setTimeout(resolve, 5000));
+        const timeout = new Promise((r) => setTimeout(r, 5000));
         await Promise.race([Promise.all(promises), timeout]);
       } catch (e) {
         console.error('Sound loading error:', e);
@@ -70,39 +70,29 @@ export const Nippelboard = () => {
         setLoading(false);
       }
     };
-    loadSounds();
+    load();
   }, [loadSoundFromUrl]);
 
-  // Get natural image dimensions on mount
+  // Get natural image dimensions
   useEffect(() => {
     const img = new Image();
-    img.onload = () => {
-      setImageNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
-    };
+    img.onload = () => setImageNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
     img.src = '/assets/images/board_off.webp';
   }, []);
 
   // Recalculate rendered image bounds on resize
   useEffect(() => {
     if (!imageNaturalSize) return;
-
     const update = () => {
       const el = containerRef.current;
       if (!el) return;
-      const bounds = getRenderedImageBounds(
-        el.clientWidth,
-        el.clientHeight,
-        imageNaturalSize.w,
-        imageNaturalSize.h
+      setImageBounds(
+        getRenderedImageBounds(el.clientWidth, el.clientHeight, imageNaturalSize.w, imageNaturalSize.h)
       );
-      setImageBounds(bounds);
     };
-
     update();
-
     const observer = new ResizeObserver(update);
     if (containerRef.current) observer.observe(containerRef.current);
-
     return () => observer.disconnect();
   }, [imageNaturalSize]);
 
@@ -113,14 +103,27 @@ export const Nippelboard = () => {
     await playSound(index, () => setActiveButton(null));
   };
 
-  // Clip-path using circle(), coordinates relative to the overlay div
-  const getClipPath = (index: number | null) => {
-    if (index === null || !imageBounds) return 'circle(0% at 0% 0%)';
+  /**
+   * Build a soft radial-gradient mask centered on the active button.
+   * This creates a natural, feathered glow instead of a hard circle edge.
+   */
+  const getGlowMask = (index: number | null): React.CSSProperties => {
+    if (index === null || !imageBounds) {
+      return { opacity: 0 };
+    }
+
     const r = BUTTON_REGIONS[index];
-    const centerX = r.left + r.width / 2;
-    const centerY = r.top + r.height / 2;
-    const radius = Math.min(r.width, r.height) / 2;
-    return `circle(${radius}% at ${centerX}% ${centerY}%)`;
+    // Center of the button in percentages of the overlay
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    // Radius: use the smaller dimension to keep it circular
+    const radius = Math.min(r.width, r.height) * 0.55; // slightly larger than 0.5 for soft bleed
+
+    return {
+      opacity: 1,
+      WebkitMaskImage: `radial-gradient(circle at ${cx}% ${cy}%, black 0%, black ${radius * 0.6}%, transparent ${radius}%)`,
+      maskImage: `radial-gradient(circle at ${cx}% ${cy}%, black 0%, black ${radius * 0.6}%, transparent ${radius}%)`,
+    };
   };
 
   return (
@@ -128,24 +131,23 @@ export const Nippelboard = () => {
       ref={containerRef}
       className="relative w-screen h-screen overflow-hidden bg-black touch-none select-none"
     >
-      {/* Layer 1: Base image (board_off) */}
+      {/* Layer 1: Base image */}
       <img
         src="/assets/images/board_off.webp"
         alt="Board"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none z-10"
       />
 
-      {/* Layer 2: Glow image (board_on) — clipped to the active button circle */}
+      {/* Layer 2: Glow image with soft radial mask */}
       {imageBounds && (
         <div
-          className="absolute z-20 pointer-events-none transition-opacity duration-75"
+          className="absolute z-20 pointer-events-none transition-opacity duration-100"
           style={{
             left: imageBounds.x,
             top: imageBounds.y,
             width: imageBounds.width,
             height: imageBounds.height,
-            opacity: activeButtonIndex !== null ? 1 : 0,
-            clipPath: getClipPath(activeButtonIndex),
+            ...getGlowMask(activeButtonIndex),
           }}
         >
           <img
@@ -156,7 +158,7 @@ export const Nippelboard = () => {
         </div>
       )}
 
-      {/* Layer 3: Interaction Hotspots — positioned over the rendered image */}
+      {/* Layer 3: Interaction Hotspots */}
       {imageBounds && (
         <div
           className="absolute z-30"
@@ -194,9 +196,7 @@ export const Nippelboard = () => {
         onClick={() => setDebug(!debug)}
         className={cn(
           'absolute top-4 right-4 z-40 p-3 rounded-full shadow-lg transition-all border border-white/10',
-          debug
-            ? 'bg-blue-600 text-white'
-            : 'bg-zinc-900/80 text-zinc-400 hover:text-white'
+          debug ? 'bg-blue-600 text-white' : 'bg-zinc-900/80 text-zinc-400 hover:text-white'
         )}
         aria-label="Toggle Debug Mode"
       >

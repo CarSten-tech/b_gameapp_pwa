@@ -6,30 +6,29 @@ export interface ButtonRegion {
 }
 
 /**
- * BUTTON REGIONS defined as percentages of the SOURCE IMAGE.
- * These coordinates are relative to the original board image,
- * NOT the screen. The component will translate them to screen
- * coordinates by calculating the actual rendered image bounds.
+ * Button regions as percentages of the SOURCE IMAGE.
+ * The component translates these to screen coords using
+ * the actual rendered image bounds (accounting for object-cover).
  */
 const ROWS = 3;
 const COLS = 5;
 
 // Grid position within the SOURCE IMAGE (in %)
-const GRID_TOP = 14.0;
-const GRID_LEFT = 9.5;
-const GRID_RIGHT = 9.5;
-const GRID_BOTTOM = 10.0;
+const GRID_TOP = 15.0;
+const GRID_LEFT = 10.0;
+const GRID_RIGHT = 10.0;
+const GRID_BOTTOM = 11.0;
 
 // Gaps within the source image (in %)
-const GAP_X = 2.0;
-const GAP_Y = 5.5;
+const GAP_X = 2.2;
+const GAP_Y = 5.8;
 
 const calculateRegions = (): ButtonRegion[] => {
   const regions: ButtonRegion[] = [];
-  
+
   const gridWidth = 100 - GRID_LEFT - GRID_RIGHT;
   const gridHeight = 100 - GRID_TOP - GRID_BOTTOM;
-  
+
   const cellWidth = (gridWidth - (COLS - 1) * GAP_X) / COLS;
   const cellHeight = (gridHeight - (ROWS - 1) * GAP_Y) / ROWS;
 
@@ -43,7 +42,7 @@ const calculateRegions = (): ButtonRegion[] => {
       });
     }
   }
-  
+
   return regions;
 };
 
