@@ -11,6 +11,15 @@ const BUTTON_ROWS = 3;
 const BUTTON_COLS = 5;
 const TOTAL_BUTTONS = BUTTON_ROWS * BUTTON_COLS;
 
+// Adjust these percentages to align the grid with the physical board buttons
+const INNER_PADDING = {
+  top: 9,    // %
+  bottom: 8, // %
+  left: 6,   // %
+  right: 6   // %
+};
+const GRID_GAP = '0.5%'; 
+
 export const Nippelboard = () => {
   const { 
     activeButtonIndex, 
@@ -100,15 +109,19 @@ export const Nippelboard = () => {
 
   // Helper to calculate clip-path for 3x5 grid
   const getClipPath = (index: number | null) => {
-    if (index === null) return 'inset(0 0 100% 100%)'; // Invisible
+    if (index === null) return 'inset(0 0 100% 100%)';
     
     const row = Math.floor(index / BUTTON_COLS);
     const col = index % BUTTON_COLS;
     
-    const top = (row / BUTTON_ROWS) * 100;
-    const bottom = 100 - ((row + 1) / BUTTON_ROWS) * 100;
-    const left = (col / BUTTON_COLS) * 100;
-    const right = 100 - ((col + 1) / BUTTON_COLS) * 100;
+    // Calculate cell size
+    const cellWidth = (100 - INNER_PADDING.left - INNER_PADDING.right) / BUTTON_COLS;
+    const cellHeight = (100 - INNER_PADDING.top - INNER_PADDING.bottom) / BUTTON_ROWS;
+    
+    const top = INNER_PADDING.top + (row * cellHeight);
+    const bottom = 100 - (INNER_PADDING.top + (row + 1) * cellHeight);
+    const left = INNER_PADDING.left + (col * cellWidth);
+    const right = 100 - (INNER_PADDING.left + (col + 1) * cellWidth);
     
     return `inset(${top}% ${right}% ${bottom}% ${left}%)`;
   };
@@ -147,23 +160,29 @@ export const Nippelboard = () => {
         </div>
 
         {/* Interaction Grid (Hotspots) */}
-        <div className="absolute inset-0 z-30 grid grid-cols-5 grid-rows-3 p-2 gap-1">
+        <div 
+          className="absolute z-30 grid grid-cols-5 grid-rows-3"
+          style={{ 
+            top: `${INNER_PADDING.top}%`,
+            bottom: `${INNER_PADDING.bottom}%`,
+            left: `${INNER_PADDING.left}%`,
+            right: `${INNER_PADDING.right}%`,
+            gap: GRID_GAP
+          }}
+        >
           {Array.from({ length: TOTAL_BUTTONS }).map((_, i) => (
             <button
               key={i}
               onClick={() => handleButtonClick(i)}
               className={cn(
-                "relative transition-all active:scale-95 flex items-center justify-center rounded-lg border-2 border-transparent",
-                isRecordingMode ? "hover:border-red-500/50" : "hover:border-yellow-400/20",
-                recordingId === i && "animate-pulse border-red-500 bg-red-500/20",
-                audioEngine.isLoaded(i) && !isRecordingMode && "hover:bg-white/5"
+                "relative transition-all active:scale-95 flex items-center justify-center rounded-xl",
+                isRecordingMode ? "border-2 border-red-500/30 hover:border-red-500 bg-red-500/5 hover:bg-red-500/10" : "hover:bg-white/5",
+                recordingId === i && "animate-pulse border-2 border-red-500 bg-red-500/20",
+                activeButtonIndex === i && !isRecordingMode && "bg-white/10"
               )}
             >
               {isRecordingMode && !recordingId && (
-                <Mic className="w-6 h-6 text-zinc-400 opacity-50" />
-              )}
-              {!isRecordingMode && !audioEngine.isLoaded(i) && (
-                <div className="w-2 h-2 rounded-full bg-zinc-700" title="Empty" />
+                <Mic className="w-5 h-5 text-zinc-500 opacity-40" />
               )}
             </button>
           ))}
