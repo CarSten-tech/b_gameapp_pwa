@@ -98,9 +98,16 @@ export const Nippelboard = () => {
 
   const handleButtonClick = async (index: number) => {
     await initContext();
-    if (!isLoaded(index)) return;
+
     setActiveButton(index);
-    await playSound(index, () => setActiveButton(null));
+
+    if (isLoaded(index)) {
+      // Play the sound and turn off glow when it ends
+      await playSound(index, () => setActiveButton(null));
+    } else {
+      // No sound mapped — just show glow for 300ms
+      setTimeout(() => setActiveButton(null), 300);
+    }
   };
 
   /**
@@ -141,7 +148,7 @@ export const Nippelboard = () => {
       {/* Layer 2: Glow image with soft radial mask */}
       {imageBounds && (
         <div
-          className="absolute z-20 pointer-events-none transition-opacity duration-100"
+          className="absolute z-20 pointer-events-none"
           style={{
             left: imageBounds.x,
             top: imageBounds.y,
