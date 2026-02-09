@@ -113,17 +113,17 @@ export const Nippelboard = () => {
   };
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center p-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] touch-none select-none">
+    <div className="relative w-screen h-screen overflow-hidden bg-black touch-none select-none">
       
-      {/* Board Container with 2532/1170 aspect ratio */}
-      <div className="relative w-full max-w-[98vw] shadow-2xl overflow-hidden rounded-xl bg-black border-2 border-zinc-800" style={{ aspectRatio: '2532 / 1170' }}>
+      {/* Board Container - Forced Fullscreen */}
+      <div className="relative w-full h-full overflow-hidden">
         
         {/* Layer 1: Base image (board_off) */}
         <div className="absolute inset-0 z-10">
            <img 
             src="/assets/images/board_off.webp" 
             alt="Board" 
-            className="w-full h-full object-contain pointer-events-none"
+            className="w-full h-full object-cover pointer-events-none"
            />
         </div>
 
@@ -138,7 +138,7 @@ export const Nippelboard = () => {
           <img 
             src="/assets/images/board_on.webp" 
             alt="Board Glow" 
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
           />
         </div>
 
