@@ -208,16 +208,16 @@ export const Nippelboard = () => {
               {/* Label Text */}
               {SOUND_LABELS[i] && (
                 <div
-                  className="absolute pointer-events-none flex items-center justify-center overflow-hidden"
+                  className="absolute pointer-events-none flex items-center justify-center"
                   style={{
-                    top: `${region.top + region.height * 0.76}%`, // Nudged slightly for better centering
+                    top: `${region.top + region.height * 0.77}%`, // Nudged for perfect alignment
                     left: `${region.left}%`,
                     width: `${region.width}%`,
                     height: `${region.height * 0.4}%`,
                   }}
                 >
                   <span 
-                    className="text-zinc-900/90 -rotate-1 select-none text-center"
+                    className="text-zinc-900/95 -rotate-1 select-none text-center w-full"
                     style={{
                       fontFamily: 'var(--font-rock-salt), cursive',
                       fontSize: 'min(2.8vw, 2.8vh)',
