@@ -5,16 +5,15 @@ export interface ButtonRegion {
   height: number;
 }
 
-const ROWS = 3;
-const COLS = 5;
-
-// These are base estimates based on the screenshot provided.
-// They can be individually tuned if specific buttons are off.
+// These are base estimates based on the screenshot provided (object-cover scaling)
 const PADDING_TOP = 14.5;
 const PADDING_BOTTOM = 11.5;
 const PADDING_LEFT = 7.5;
 const PADDING_RIGHT = 7.5;
 const GAP = 1.5;
+
+const ROWS = 3;
+const COLS = 5;
 
 const calculateRegions = (): ButtonRegion[] => {
   const regions: ButtonRegion[] = [];
@@ -38,3 +37,8 @@ const calculateRegions = (): ButtonRegion[] => {
 };
 
 export const BUTTON_REGIONS: ButtonRegion[] = calculateRegions();
+
+// Mapping individual buttons to static audio assets
+export const SOUND_MAPPING: Record<number, string> = {
+  0: 'tv-total.mp3', // First row, first button from left
+};

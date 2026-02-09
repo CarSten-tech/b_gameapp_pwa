@@ -24,6 +24,15 @@ export const useAudioEngine = () => {
     return audioBuffer;
   }, [initContext]);
 
+  const loadSoundFromUrl = useCallback(async (id: number, url: string) => {
+    const ctx = await initContext();
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+    buffers.current.set(id, audioBuffer);
+    return audioBuffer;
+  }, [initContext]);
+
   const playSound = useCallback(async (id: number, onEnded?: () => void) => {
     const ctx = await initContext();
     const buffer = buffers.current.get(id);
@@ -47,6 +56,7 @@ export const useAudioEngine = () => {
 
   return {
     loadSound,
+    loadSoundFromUrl,
     playSound,
     isLoaded,
     initContext

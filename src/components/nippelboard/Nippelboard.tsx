@@ -1,105 +1,52 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useGameStore } from '@/store/game-store';
 import { useAudioEngine } from '@/hooks/use-audio-engine';
-import { db } from '@/lib/db';
 import { cn } from '@/lib/utils';
-import { BUTTON_REGIONS } from '@/constants/board-config';
-import { Mic, X, Settings2, Scissors } from 'lucide-react';
+import { BUTTON_REGIONS, SOUND_MAPPING } from '@/constants/board-config';
 
-const DEBUG = false; // Toggle this to show red rectangles
+const DEBUG = false; // Set to true to see button regions
 
 export const Nippelboard = () => {
   const { 
     activeButtonIndex, 
     setActiveButton, 
-    isRecordingMode, 
-    setRecordingMode 
   } = useGameStore();
 
   const [loading, setLoading] = useState(true);
-  const [recordingId, setRecordingId] = useState<number | null>(null);
-  const { loadSound, playSound, isLoaded, initContext } = useAudioEngine();
-  
-  const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
+  const { loadSoundFromUrl, playSound, isLoaded, initContext } = useAudioEngine();
 
-  // Initialize and load sounds from DB
+  // Load static sounds from public/assets/audio/
   useEffect(() => {
     const loadSounds = async () => {
       try {
-        const ids = await db.getAllSoundIds();
-        for (const key of ids) {
-          const id = parseInt(key.replace('sound_', ''));
-          const blob = await db.getSound(id);
-          if (blob) {
-            await loadSound(id, blob);
-          }
-        }
+        const loadPromises = Object.entries(SOUND_MAPPING).map(([id, filename]) => 
+          loadSoundFromUrl(parseInt(id), `/assets/audio/${filename}`)
+        );
+        await Promise.all(loadPromises);
       } catch (err) {
-        console.error('Failed to load sounds:', err);
+        console.error('Failed to load static sounds:', err);
       } finally {
         setLoading(false);
       }
     };
     loadSounds();
-  }, [loadSound]);
+  }, [loadSoundFromUrl]);
 
   const handleButtonClick = async (index: number) => {
-    // Ensure AudioContext is unlocked on first interaction
+    // Ensure AudioContext is unlocked (required for iOS)
     await initContext();
 
-    if (isRecordingMode) {
-      if (recordingId === index) {
-        stopRecording();
-      } else {
-        startRecording(index);
-      }
+    if (!isLoaded(index)) {
+      console.log(`Sound for button ${index} not loaded or mapped.`);
       return;
     }
-
-    if (!isLoaded(index)) return;
 
     setActiveButton(index);
     await playSound(index, () => {
       setActiveButton(null);
     });
-  };
-
-  const startRecording = async (index: number) => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      mediaRecorder.current = recorder;
-      audioChunks.current = [];
-
-      recorder.ondataavailable = (event) => {
-        audioChunks.current.push(event.data);
-      };
-
-      recorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
-        await db.saveSound(index, audioBlob);
-        await loadSound(index, audioBlob);
-        setRecordingId(null);
-        setRecordingMode(false);
-        // Instant playback for confirmation
-        handleButtonClick(index);
-      };
-
-      recorder.start();
-      setRecordingId(index);
-    } catch (err) {
-      console.error('Recording failed:', err);
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
-      mediaRecorder.current.stop();
-      mediaRecorder.current.stream.getTracks().forEach(track => track.stop());
-    }
   };
 
   const getClipPath = (index: number | null) => {
@@ -115,7 +62,7 @@ export const Nippelboard = () => {
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black touch-none select-none">
       
-      {/* Board Container - Forced Fullscreen */}
+      {/* Board Container - Fullscreen */}
       <div className="relative w-full h-full overflow-hidden">
         
         {/* Layer 1: Base image (board_off) */}
@@ -151,8 +98,7 @@ export const Nippelboard = () => {
               className={cn(
                 "absolute transition-transform active:scale-95 touch-manipulation outline-none",
                 DEBUG && "bg-red-500/30 border border-red-500",
-                isRecordingMode && "hover:bg-red-500/10 cursor-pointer",
-                recordingId === i && "animate-pulse bg-red-600/40"
+                !isLoaded(i) && "cursor-default"
               )}
               style={{
                 top: `${region.top}%`,
@@ -162,35 +108,16 @@ export const Nippelboard = () => {
                 WebkitTapHighlightColor: 'transparent'
               }}
               aria-label={`Pad ${i + 1}`}
-            >
-              {isRecordingMode && !recordingId && !isLoaded(i) && (
-                <div className="w-full h-full flex items-center justify-center opacity-30">
-                  <Mic className="w-6 h-6 text-white" />
-                </div>
-              )}
-            </button>
+            />
           ))}
         </div>
-      </div>
-
-      {/* Floating UI Controls */}
-      <div className="absolute top-4 right-4 z-40 flex gap-2 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)]">
-        <button
-          onClick={() => setRecordingMode(!isRecordingMode)}
-          className={cn(
-            "p-3 rounded-full shadow-lg transition-all border border-white/10",
-            isRecordingMode ? "bg-red-600 text-white animate-pulse" : "bg-zinc-900/80 text-zinc-400 hover:text-white"
-          )}
-        >
-          {isRecordingMode ? <X className="w-5 h-5" /> : <Settings2 className="w-5 h-5" />}
-        </button>
       </div>
 
       {loading && (
         <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
           <div className="flex flex-col items-center gap-4">
              <div className="w-10 h-10 border-4 border-zinc-700 border-t-white rounded-full animate-spin" />
-             <p className="text-zinc-500 font-medium">Nippelboard lädt...</p>
+             <p className="text-zinc-500 font-medium tracking-widest uppercase text-xs">Nippelboard lädt...</p>
           </div>
         </div>
       )}
