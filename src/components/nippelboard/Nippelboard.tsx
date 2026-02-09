@@ -6,7 +6,7 @@ import { useAudioEngine } from '@/hooks/use-audio-engine';
 import { cn } from '@/lib/utils';
 import { BUTTON_REGIONS, SOUND_MAPPING } from '@/constants/board-config';
 
-const DEBUG = false; // Set to true to see button regions
+const DEBUG_MODE_DEFAULT = false;
 
 export const Nippelboard = () => {
   const { 
@@ -15,6 +15,7 @@ export const Nippelboard = () => {
   } = useGameStore();
 
   const [loading, setLoading] = useState(true);
+  const [debug, setDebug] = useState(DEBUG_MODE_DEFAULT);
   const { loadSoundFromUrl, playSound, isLoaded, initContext } = useAudioEngine();
 
   // Load static sounds from public/assets/audio/
@@ -109,7 +110,7 @@ export const Nippelboard = () => {
               onClick={() => handleButtonClick(i)}
               className={cn(
                 "absolute transition-transform active:scale-95 touch-manipulation outline-none",
-                DEBUG && "bg-red-500/30 border border-red-500",
+                debug && "bg-red-500/20 border border-red-500/50 z-50",
                 !isLoaded(i) && "cursor-default"
               )}
               style={{

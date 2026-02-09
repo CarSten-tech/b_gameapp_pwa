@@ -5,12 +5,12 @@ export interface ButtonRegion {
   height: number;
 }
 
-// These are base estimates based on the screenshot provided (object-cover scaling)
-const PADDING_TOP = 14.5;
-const PADDING_BOTTOM = 11.5;
-const PADDING_LEFT = 7.5;
-const PADDING_RIGHT = 7.5;
-const GAP = 1.5;
+// Precision tuning for object-cover (Full Screen)
+const PADDING_TOP = 17.5;    // Pushes grid down
+const PADDING_BOTTOM = 13.5; // Pushes grid up
+const PADDING_LEFT = 9.5;   // Pushes from left
+const PADDING_RIGHT = 9.5;  // Pushes from right
+const GAP = 1.2;             // Slightly tighter gap
 
 const ROWS = 3;
 const COLS = 5;
