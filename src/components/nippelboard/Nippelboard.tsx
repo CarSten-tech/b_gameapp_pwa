@@ -20,14 +20,26 @@ export const Nippelboard = () => {
   // Load static sounds from public/assets/audio/
   useEffect(() => {
     const loadSounds = async () => {
+      console.log('Nippelboard: Starting to load sounds...', SOUND_MAPPING);
       try {
-        const loadPromises = Object.entries(SOUND_MAPPING).map(([id, filename]) => 
-          loadSoundFromUrl(parseInt(id), `/assets/audio/${filename}`)
-        );
-        await Promise.all(loadPromises);
+        const loadPromises = Object.entries(SOUND_MAPPING).map(async ([id, filename]) => {
+          try {
+            const url = `/assets/audio/${filename}`;
+            console.log(`Nippelboard: Loading sound ${id} from ${url}`);
+            await loadSoundFromUrl(parseInt(id), url);
+            console.log(`Nippelboard: Successfully loaded sound ${id}`);
+          } catch (soundErr) {
+            console.error(`Nippelboard: Failed to load sound ${id} (${filename}):`, soundErr);
+          }
+        });
+        
+        // Use a timeout to ensure the app doesn't hang forever
+        const timeout = new Promise((resolve) => setTimeout(resolve, 5000));
+        await Promise.race([Promise.all(loadPromises), timeout]);
       } catch (err) {
-        console.error('Failed to load static sounds:', err);
+        console.error('Nippelboard: Critical error during sound loading sequence:', err);
       } finally {
+        console.log('Nippelboard: Loading sequence finished.');
         setLoading(false);
       }
     };
