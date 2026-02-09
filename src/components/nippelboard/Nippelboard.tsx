@@ -217,11 +217,14 @@ export const Nippelboard = () => {
                   }}
                 >
                   <span 
-                    className="font-marker text-zinc-900/90 -rotate-1 select-none"
+                    className="text-zinc-900/90 -rotate-1 select-none text-center"
                     style={{
-                      fontSize: 'min(3.2vw, 3.2vh)',
+                      fontFamily: 'var(--font-rock-salt), cursive',
+                      fontSize: 'min(2.8vw, 2.8vh)',
                       fontWeight: 400,
-                      letterSpacing: '-0.02em',
+                      letterSpacing: '-0.01em',
+                      lineHeight: 1,
+                      textShadow: '0.2px 0.2px 0px rgba(0,0,0,0.2)'
                     }}
                   >
                     {SOUND_LABELS[i]}
