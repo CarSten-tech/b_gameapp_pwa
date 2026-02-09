@@ -210,17 +210,18 @@ export const Nippelboard = () => {
                 <div
                   className="absolute pointer-events-none flex items-center justify-center overflow-hidden"
                   style={{
-                    top: `${region.top + region.height + 0.5}%`, // Position below the button
-                    left: `${region.left - 2}%`, // Give some horizontal breathing room
+                    top: `${region.top + region.height * 0.72}%`, // Shifted UP closer to the button
+                    left: `${region.left - 2}%`,
                     width: `${region.width + 4}%`,
-                    height: `${region.height * 0.5}%`, // Label field height is roughly half the button height
+                    height: `${region.height * 0.5}%`,
                   }}
                 >
                   <span 
-                    className="font-marker text-zinc-800/80 -rotate-1 select-none"
+                    className="font-marker text-zinc-900/90 -rotate-1 select-none"
                     style={{
-                      fontSize: 'min(3.5vw, 3.5vh)',
-                      textShadow: '0.5px 0.5px 0px rgba(255,255,255,0.2)'
+                      fontSize: 'min(3.2vw, 3.2vh)',
+                      fontWeight: 400,
+                      letterSpacing: '-0.02em',
                     }}
                   >
                     {SOUND_LABELS[i]}
