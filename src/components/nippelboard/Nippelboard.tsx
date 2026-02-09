@@ -210,10 +210,10 @@ export const Nippelboard = () => {
                 <div
                   className="absolute pointer-events-none flex items-center justify-center overflow-hidden"
                   style={{
-                    top: `${region.top + region.height * 0.72}%`, // Shifted UP closer to the button
-                    left: `${region.left - 2}%`,
-                    width: `${region.width + 4}%`,
-                    height: `${region.height * 0.5}%`,
+                    top: `${region.top + region.height * 0.76}%`, // Nudged slightly for better centering
+                    left: `${region.left}%`,
+                    width: `${region.width}%`,
+                    height: `${region.height * 0.4}%`,
                   }}
                 >
                   <span 
