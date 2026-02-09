@@ -122,7 +122,7 @@ export const Nippelboard = () => {
         <div className="absolute inset-0 bg-zinc-800 flex items-center justify-center text-zinc-600 font-bold uppercase tracking-widest text-xl">
            {/* Replace with <Image> once asset exists */}
            <img 
-            src="/assets/images/board_off.jpg" 
+            src="/assets/images/board_off.webp" 
             alt="Board Off" 
             className="w-full h-full object-cover opacity-80"
             onError={(e) => (e.currentTarget.style.display = 'none')}
@@ -139,7 +139,7 @@ export const Nippelboard = () => {
           }}
         >
           <img 
-            src="/assets/images/board_on.jpg" 
+            src="/assets/images/board_on.webp" 
             alt="Board On" 
             className="w-full h-full object-cover"
             onError={(e) => (e.currentTarget.parentNode as HTMLElement).classList.add('bg-yellow-500/30')}
