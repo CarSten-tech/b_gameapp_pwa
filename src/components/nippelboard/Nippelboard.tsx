@@ -75,55 +75,18 @@ export const Nippelboard = () => {
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black touch-none select-none">
       
-      {/* Board Container - Fullscreen */}
-      <div className="relative w-full h-full overflow-hidden">
-        
-        {/* Layer 1: Base image (board_off) */}
-        <div className="absolute inset-0 z-10">
-           <img 
-            src="/assets/images/board_off.webp" 
-            alt="Board" 
-            className="w-full h-full object-cover pointer-events-none"
-           />
-        </div>
-
-        {/* Layer 2: Glow image (board_on) with clipping */}
-        <div 
-          className="absolute inset-0 z-20 transition-opacity duration-75 pointer-events-none"
-          style={{ 
-            opacity: activeButtonIndex !== null ? 1 : 0,
-            clipPath: getClipPath(activeButtonIndex)
-          }}
+      {/* Floating UI Controls */}
+      <div className="absolute top-4 right-4 z-40 flex gap-2 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)]">
+        <button
+          onClick={() => setDebug(!debug)}
+          className={cn(
+            "p-3 rounded-full shadow-lg transition-all border border-white/10",
+            debug ? "bg-blue-600 text-white" : "bg-zinc-900/80 text-zinc-400 hover:text-white"
+          )}
+          title="Debug Modus"
         >
-          <img 
-            src="/assets/images/board_on.webp" 
-            alt="Board Glow" 
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        {/* Layer 3: Interaction Grid (Hotspots) */}
-        <div className="absolute inset-0 z-30">
-          {BUTTON_REGIONS.map((region, i) => (
-            <button
-              key={i}
-              onClick={() => handleButtonClick(i)}
-              className={cn(
-                "absolute transition-transform active:scale-95 touch-manipulation outline-none",
-                debug && "bg-red-500/20 border border-red-500/50 z-50",
-                !isLoaded(i) && "cursor-default"
-              )}
-              style={{
-                top: `${region.top}%`,
-                left: `${region.left}%`,
-                width: `${region.width}%`,
-                height: `${region.height}%`,
-                WebkitTapHighlightColor: 'transparent'
-              }}
-              aria-label={`Pad ${i + 1}`}
-            />
-          ))}
-        </div>
+          <Play className="w-5 h-5" />
+        </button>
       </div>
 
       {loading && (
