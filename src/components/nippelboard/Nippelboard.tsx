@@ -11,14 +11,14 @@ const BUTTON_ROWS = 3;
 const BUTTON_COLS = 5;
 const TOTAL_BUTTONS = BUTTON_ROWS * BUTTON_COLS;
 
-// Adjust these percentages to align the grid with the physical board buttons
+// Precision tuning based on user screenshot
 const INNER_PADDING = {
-  top: 9,    // %
-  bottom: 8, // %
-  left: 6,   // %
-  right: 6   // %
+  top: 14.5,    // % (Pushes grid down)
+  bottom: 11.5, // % (Pushes grid up)
+  left: 7.5,    // % (Shrinks from left)
+  right: 7.5    // % (Shrinks from right)
 };
-const GRID_GAP = '0.5%'; 
+const GRID_GAP = '0.8%'; 
 
 export const Nippelboard = () => {
   const { 
