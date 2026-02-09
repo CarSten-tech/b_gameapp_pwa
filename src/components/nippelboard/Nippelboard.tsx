@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '@/store/game-store';
 import { useAudioEngine } from '@/hooks/use-audio-engine';
 import { cn } from '@/lib/utils';
-import { BUTTON_REGIONS, SOUND_MAPPING } from '@/constants/board-config';
+import { BUTTON_REGIONS, SOUND_MAPPING, SOUND_LABELS } from '@/constants/board-config';
 import { Bug } from 'lucide-react';
 
 /**
@@ -174,7 +174,7 @@ export const Nippelboard = () => {
         </div>
       )}
 
-      {/* Layer 3: Interaction Hotspots */}
+      {/* Layer 3: Interaction Hotspots & Labels */}
       {imageBounds && (
         <div
           className="absolute z-30"
@@ -186,23 +186,48 @@ export const Nippelboard = () => {
           }}
         >
           {BUTTON_REGIONS.map((region, i) => (
-            <button
-              key={i}
-              onClick={() => handleButtonClick(i)}
-              className={cn(
-                'absolute rounded-full transition-transform active:scale-95 touch-manipulation outline-none',
-                debug && 'bg-red-500/25 border-2 border-red-400',
-                !isLoaded(i) && 'cursor-default'
+            <React.Fragment key={i}>
+              {/* Button Hitbox */}
+              <button
+                onClick={() => handleButtonClick(i)}
+                className={cn(
+                  'absolute rounded-full transition-transform active:scale-95 touch-manipulation outline-none',
+                  debug && 'bg-red-500/25 border-2 border-red-400',
+                  !isLoaded(i) && 'cursor-default'
+                )}
+                style={{
+                  top: `${region.top}%`,
+                  left: `${region.left}%`,
+                  width: `${region.width}%`,
+                  height: `${region.height}%`,
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+                aria-label={`Pad ${i + 1}`}
+              />
+              
+              {/* Label Text */}
+              {SOUND_LABELS[i] && (
+                <div
+                  className="absolute pointer-events-none flex items-center justify-center overflow-hidden"
+                  style={{
+                    top: `${region.top + region.height + 0.5}%`, // Position below the button
+                    left: `${region.left - 2}%`, // Give some horizontal breathing room
+                    width: `${region.width + 4}%`,
+                    height: `${region.height * 0.5}%`, // Label field height is roughly half the button height
+                  }}
+                >
+                  <span 
+                    className="font-marker text-zinc-800/80 -rotate-1 select-none"
+                    style={{
+                      fontSize: 'min(3.5vw, 3.5vh)',
+                      textShadow: '0.5px 0.5px 0px rgba(255,255,255,0.2)'
+                    }}
+                  >
+                    {SOUND_LABELS[i]}
+                  </span>
+                </div>
               )}
-              style={{
-                top: `${region.top}%`,
-                left: `${region.left}%`,
-                width: `${region.width}%`,
-                height: `${region.height}%`,
-                WebkitTapHighlightColor: 'transparent',
-              }}
-              aria-label={`Pad ${i + 1}`}
-            />
+            </React.Fragment>
           ))}
         </div>
       )}

@@ -52,3 +52,8 @@ export const BUTTON_REGIONS: ButtonRegion[] = calculateRegions();
 export const SOUND_MAPPING: Record<number, string> = {
   0: 'tv-total.mp3',
 };
+
+// Custom handwriting labels
+export const SOUND_LABELS: Record<number, string> = {
+  0: 'Hallo',
+};
