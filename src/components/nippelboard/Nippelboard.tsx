@@ -11,14 +11,14 @@ const BUTTON_ROWS = 3;
 const BUTTON_COLS = 5;
 const TOTAL_BUTTONS = BUTTON_ROWS * BUTTON_COLS;
 
-// Precision tuning based on user screenshot
+// Precision tuning based on user screenshot (Board is ~82% of total width/height internally)
 const INNER_PADDING = {
-  top: 14.5,    // % (Pushes grid down)
-  bottom: 11.5, // % (Pushes grid up)
-  left: 7.5,    // % (Shrinks from left)
-  right: 7.5    // % (Shrinks from right)
+  top: 13,    // % (Pushes grid down)
+  bottom: 11, // % (Pushes grid up)
+  left: 10,   // % (Shrinks from left)
+  right: 10   // % (Shrinks from right)
 };
-const GRID_GAP = '0.8%'; 
+const GRID_GAP = '0.5%'; 
 
 export const Nippelboard = () => {
   const { 
@@ -137,7 +137,7 @@ export const Nippelboard = () => {
            <img 
             src="/assets/images/board_off.webp" 
             alt="Board Off" 
-            className="w-full h-full object-cover opacity-80"
+            className="w-full h-full object-contain"
             onError={(e) => (e.currentTarget.style.display = 'none')}
            />
            <span>Nippelboard</span>
@@ -154,7 +154,7 @@ export const Nippelboard = () => {
           <img 
             src="/assets/images/board_on.webp" 
             alt="Board On" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             onError={(e) => (e.currentTarget.parentNode as HTMLElement).classList.add('bg-yellow-500/30')}
           />
         </div>
