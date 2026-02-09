@@ -64,13 +64,15 @@ export const Nippelboard = () => {
   };
 
   const getClipPath = (index: number | null) => {
-    if (index === null) return 'inset(0 0 100% 100%)';
+    if (index === null) return 'circle(0% at 0% 0%)';
     const r = BUTTON_REGIONS[index];
-    const top = r.top;
-    const left = r.left;
-    const right = 100 - (r.left + r.width);
-    const bottom = 100 - (r.top + r.height);
-    return `inset(${top}% ${right}% ${bottom}% ${left}%)`;
+    const centerX = r.left + r.width / 2;
+    const centerY = r.top + r.height / 2;
+    // Using width/2 as radius for a circular glow. 
+    // We additive a tiny bit (0.5%) for a softer bleed if needed, 
+    // but user asked for "exakt", so we stay precise.
+    const radius = r.width / 2; 
+    return `circle(${radius}% at ${centerX}% ${centerY}%)`;
   };
 
   return (
@@ -110,7 +112,7 @@ export const Nippelboard = () => {
               key={i}
               onClick={() => handleButtonClick(i)}
               className={cn(
-                "absolute transition-transform active:scale-95 touch-manipulation outline-none",
+                "absolute transition-transform active:scale-95 touch-manipulation outline-none rounded-full",
                 debug && "bg-red-500/20 border border-red-500/50 z-50",
                 !isLoaded(i) && "cursor-default"
               )}
