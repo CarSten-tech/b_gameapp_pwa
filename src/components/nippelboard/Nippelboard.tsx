@@ -213,10 +213,10 @@ export const Nippelboard = () => {
                     debug && "border border-red-500 bg-red-400/20"
                   )}
                   style={{
-                    top: `${region.top + region.height * 0.88}%`, // Middle ground for white boxes
+                    top: `${region.top + region.height * 0.94}%`, // Final positioning for white boxes
                     left: `${region.left}%`,
                     width: `${region.width}%`,
-                    height: `${region.height * 0.22}%`, 
+                    height: `${region.height * 0.20}%`, 
                   }}
                 >
                   <span 

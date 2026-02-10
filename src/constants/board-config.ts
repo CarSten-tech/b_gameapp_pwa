@@ -14,14 +14,14 @@ const ROWS = 3;
 const COLS = 5;
 
 // Grid position within the SOURCE IMAGE (in %)
-const GRID_TOP = 15.8;
-const GRID_LEFT = 11.2;
+const GRID_TOP = 15.2;
+const GRID_LEFT = 11.6;
 const GRID_RIGHT = 10.0;
 const GRID_BOTTOM = 11.0;
 
 // Gaps within the source image (in %)
-const GAP_X = 1.9;
-const GAP_Y = 5.8;
+const GAP_X = 1.8;
+const GAP_Y = 4.5;
 
 const calculateRegions = (): ButtonRegion[] => {
   const regions: ButtonRegion[] = [];
