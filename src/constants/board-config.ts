@@ -14,13 +14,13 @@ const ROWS = 3;
 const COLS = 5;
 
 // Grid position within the SOURCE IMAGE (in %)
-const GRID_TOP = 15.0;
-const GRID_LEFT = 10.0;
+const GRID_TOP = 15.8;
+const GRID_LEFT = 11.2;
 const GRID_RIGHT = 10.0;
 const GRID_BOTTOM = 11.0;
 
 // Gaps within the source image (in %)
-const GAP_X = 2.2;
+const GAP_X = 1.9;
 const GAP_Y = 5.8;
 
 const calculateRegions = (): ButtonRegion[] => {
@@ -56,13 +56,7 @@ const VERTICAL_OFFSETS: Record<number, number> = {
   14: -2.5,
 };
 
-export const BUTTON_REGIONS: ButtonRegion[] = calculateRegions().map((region, i) => {
-  const offset = VERTICAL_OFFSETS[i];
-  if (offset) {
-    return { ...region, top: region.top + offset };
-  }
-  return region;
-});
+export const BUTTON_REGIONS: ButtonRegion[] = calculateRegions();
 
 // Mapping individual buttons to static audio assets
 export const SOUND_MAPPING: Record<number, string> = {
