@@ -203,7 +203,13 @@ export const Nippelboard = () => {
                 WebkitTapHighlightColor: 'transparent',
               }}
               aria-label={`Pad ${i + 1}`}
-            />
+            >
+              {debug && (
+                <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-[min(3vw,24px)] pointer-events-none">
+                  {i}
+                </span>
+              )}
+            </button>
           ))}
 
           {/* 2. Decoupled Labels */}
