@@ -85,15 +85,15 @@ const HORIZONTAL_OFFSETS: Record<number, number> = {
 
 // Independent Label Offsets
 const VERTICAL_OFFSETS_LABELS: Record<number, number> = {
-  0: -1.08, // 3mm up (2mm + 1mm)
+  // Global baseline is now optimized, add micro-tweaks here if needed
 };
 
 const HORIZONTAL_OFFSETS_LABELS: Record<number, number> = {
-  0: 2.88,  // Start 8.0mm further right (7.5mm + 0.5mm)
+  // Global baseline is now optimized, add micro-tweaks here if needed
 };
 
 const WIDTH_OFFSETS_LABELS: Record<number, number> = {
-  0: -4.32, // Total 12.0mm shorter (11.5mm + 0.5mm)
+  // Global baseline is now optimized, add micro-tweaks here if needed
 };
 
 const HEIGHT_OFFSETS_LABELS: Record<number, number> = {
@@ -112,7 +112,7 @@ export const BUTTON_REGIONS: ButtonRegion[] = calculateRegions().map((region, i)
 });
 
 // Final Label Regions (Decoupled from buttons)
-// Initially derived from current button-relative logic to maintain alignment
+// Baseline optimized for the white fields on the board image
 export const LABEL_REGIONS: ButtonRegion[] = calculateRegions().map((region, i) => {
   // 1. Initial button-sync offsets (to keep them in the same neighborhood)
   const vOffsetBtn = VERTICAL_OFFSETS[i] || 0;
@@ -128,9 +128,11 @@ export const LABEL_REGIONS: ButtonRegion[] = calculateRegions().map((region, i) 
   const baseLeft = region.left + hOffsetBtn;
 
   return {
-    top: baseTop + region.height * 0.96 + vOffsetLbl,
-    left: baseLeft + region.width * 0.02 + hOffsetLbl,
-    width: region.width * 0.96 + wOffsetLbl,
+    // Current "perfect" baseline relative to buttons: 
+    // vertical: -1.08%, horizontal: +2.88%, width: -4.32%
+    top: baseTop + region.height * 0.96 - 1.08 + vOffsetLbl,
+    left: baseLeft + region.width * 0.02 + 2.88 + hOffsetLbl,
+    width: region.width * 0.96 - 4.32 + wOffsetLbl,
     height: region.height * 0.20 + hSizeOffsetLbl
   };
 });
