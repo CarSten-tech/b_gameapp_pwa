@@ -89,11 +89,11 @@ const VERTICAL_OFFSETS_LABELS: Record<number, number> = {
 };
 
 const HORIZONTAL_OFFSETS_LABELS: Record<number, number> = {
-  0: 3.24,  // Start 9mm further right (8mm + 1mm)
+  0: 3.06,  // Start 8.5mm further right (9mm - 0.5mm)
 };
 
 const WIDTH_OFFSETS_LABELS: Record<number, number> = {
-  0: -4.68, // Total 13mm shorter (8mm left + 5mm right reduction)
+  0: -4.50, // Total 12.5mm shorter (13mm - 0.5mm)
 };
 
 const HEIGHT_OFFSETS_LABELS: Record<number, number> = {
