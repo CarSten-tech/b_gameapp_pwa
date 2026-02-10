@@ -226,7 +226,7 @@ export const Nippelboard = () => {
                   className="text-zinc-900/95 -rotate-1 select-none text-center w-full"
                   style={{
                     fontFamily: 'var(--font-rock-salt), cursive',
-                    fontSize: 'min(2.8vw, 2.8vh)',
+                    fontSize: 'min(2.4vw, 2.4vh)',
                     fontWeight: 400,
                     letterSpacing: '-0.01em',
                     lineHeight: 1,
