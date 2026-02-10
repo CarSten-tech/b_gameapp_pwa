@@ -46,7 +46,23 @@ const calculateRegions = (): ButtonRegion[] => {
   return regions;
 };
 
-export const BUTTON_REGIONS: ButtonRegion[] = calculateRegions();
+// Per-button vertical offsets (negative = shift UP)
+const VERTICAL_OFFSETS: Record<number, number> = {
+  7: -1.5,   // Middle row, 3rd button from left
+  10: -2.5,  // Bottom row
+  11: -2.5,
+  12: -2.5,
+  13: -2.5,
+  14: -2.5,
+};
+
+export const BUTTON_REGIONS: ButtonRegion[] = calculateRegions().map((region, i) => {
+  const offset = VERTICAL_OFFSETS[i];
+  if (offset) {
+    return { ...region, top: region.top + offset };
+  }
+  return region;
+});
 
 // Mapping individual buttons to static audio assets
 export const SOUND_MAPPING: Record<number, string> = {
