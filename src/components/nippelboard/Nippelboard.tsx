@@ -191,7 +191,7 @@ export const Nippelboard = () => {
               <button
                 onClick={() => handleButtonClick(i)}
                 className={cn(
-                  'absolute rounded-full transition-transform active:scale-95 touch-manipulation outline-none scale-[0.75]',
+                  'absolute rounded-full transition-transform active:scale-95 touch-manipulation outline-none scale-[0.72]',
                   debug && 'bg-red-500/25 border-2 border-red-400',
                   !isLoaded(i) && 'cursor-default'
                 )}
@@ -213,9 +213,9 @@ export const Nippelboard = () => {
                     debug && "border border-red-500 bg-red-400/20"
                   )}
                   style={{
-                    top: `${region.top + region.height * 0.94}%`, // Final positioning for white boxes
-                    left: `${region.left}%`,
-                    width: `${region.width}%`,
+                    top: `${region.top + region.height * 0.96}%`, // Precision for white fields
+                    left: `${region.left + region.width * 0.02}%`,
+                    width: `${region.width * 0.96}%`,
                     height: `${region.height * 0.20}%`, 
                   }}
                 >
