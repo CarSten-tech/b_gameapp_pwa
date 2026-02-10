@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '@/store/game-store';
 import { useAudioEngine } from '@/hooks/use-audio-engine';
 import { cn } from '@/lib/utils';
-import { BUTTON_REGIONS, SOUND_MAPPING, SOUND_LABELS } from '@/constants/board-config';
+import { BUTTON_REGIONS, LABEL_REGIONS, SOUND_MAPPING, SOUND_LABELS } from '@/constants/board-config';
 import { Bug } from 'lucide-react';
 
 /**
@@ -185,56 +185,56 @@ export const Nippelboard = () => {
             height: imageBounds.height,
           }}
         >
+          {/* 1. Button Hitboxes */}
           {BUTTON_REGIONS.map((region, i) => (
-            <React.Fragment key={i}>
-              {/* Button Hitbox */}
-              <button
-                onClick={() => handleButtonClick(i)}
-                className={cn(
-                  'absolute rounded-full transition-transform active:scale-95 touch-manipulation outline-none scale-[0.72]',
-                  debug && 'bg-red-500/25 border-2 border-red-400',
-                  !isLoaded(i) && 'cursor-default'
-                )}
-                style={{
-                  top: `${region.top}%`,
-                  left: `${region.left}%`,
-                  width: `${region.width}%`,
-                  height: `${region.height}%`,
-                  WebkitTapHighlightColor: 'transparent',
-                }}
-                aria-label={`Pad ${i + 1}`}
-              />
-              
-              {/* Label Text */}
-              {SOUND_LABELS[i] && (
-                <div
-                  className={cn(
-                    "absolute pointer-events-none flex items-center justify-center",
-                    debug && "border border-red-500 bg-red-400/20"
-                  )}
-                  style={{
-                    top: `${region.top + region.height * 0.96}%`, // Precision for white fields
-                    left: `${region.left + region.width * 0.02}%`,
-                    width: `${region.width * 0.96}%`,
-                    height: `${region.height * 0.20}%`, 
-                  }}
-                >
-                  <span 
-                    className="text-zinc-900/95 -rotate-1 select-none text-center w-full"
-                    style={{
-                      fontFamily: 'var(--font-rock-salt), cursive',
-                      fontSize: 'min(2.8vw, 2.8vh)',
-                      fontWeight: 400,
-                      letterSpacing: '-0.01em',
-                      lineHeight: 1,
-                      textShadow: '0.2px 0.2px 0px rgba(0,0,0,0.2)'
-                    }}
-                  >
-                    {SOUND_LABELS[i]}
-                  </span>
-                </div>
+            <button
+              key={`btn-${i}`}
+              onClick={() => handleButtonClick(i)}
+              className={cn(
+                'absolute rounded-full transition-transform active:scale-95 touch-manipulation outline-none scale-[0.72]',
+                debug && 'bg-red-500/25 border-2 border-red-400',
+                !isLoaded(i) && 'cursor-default'
               )}
-            </React.Fragment>
+              style={{
+                top: `${region.top}%`,
+                left: `${region.left}%`,
+                width: `${region.width}%`,
+                height: `${region.height}%`,
+                WebkitTapHighlightColor: 'transparent',
+              }}
+              aria-label={`Pad ${i + 1}`}
+            />
+          ))}
+
+          {/* 2. Decoupled Labels */}
+          {LABEL_REGIONS.map((region, i) => SOUND_LABELS[i] && (
+            <div
+              key={`lbl-${i}`}
+              className={cn(
+                "absolute pointer-events-none flex items-center justify-center",
+                debug && "border border-red-500 bg-red-400/20"
+              )}
+              style={{
+                top: `${region.top}%`,
+                left: `${region.left}%`,
+                width: `${region.width}%`,
+                height: `${region.height}%`, 
+              }}
+            >
+              <span 
+                className="text-zinc-900/95 -rotate-1 select-none text-center w-full"
+                style={{
+                  fontFamily: 'var(--font-rock-salt), cursive',
+                  fontSize: 'min(2.8vw, 2.8vh)',
+                  fontWeight: 400,
+                  letterSpacing: '-0.01em',
+                  lineHeight: 1,
+                  textShadow: '0.2px 0.2px 0px rgba(0,0,0,0.2)'
+                }}
+              >
+                {SOUND_LABELS[i]}
+              </span>
+            </div>
           ))}
         </div>
       )}
