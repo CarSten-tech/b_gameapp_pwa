@@ -53,16 +53,16 @@ const VERTICAL_OFFSETS: Record<number, number> = {
   2: -1.8,
   3: -1.8,
   4: -1.8,
-  5: -3.13,  // Middle row (nudged 1mm up from -2.77)
-  6: -3.13,
-  7: -3.13,
-  8: -3.13,
-  9: -3.13,
-  10: -4.98, // Bottom row (nudged 1mm up from -4.62)
-  11: -4.98,
-  12: -4.98,
-  13: -4.98,
-  14: -4.98,
+  5: -3.49,  // Middle row (nudged 1mm up from -3.13)
+  6: -3.49,
+  7: -3.49,
+  8: -3.49,
+  9: -3.49,
+  10: -5.34, // Bottom row (nudged 1mm up from -4.98)
+  11: -5.34,
+  12: -5.34,
+  13: -5.34,
+  14: -5.34,
 };
 
 const HORIZONTAL_OFFSETS: Record<number, number> = {
