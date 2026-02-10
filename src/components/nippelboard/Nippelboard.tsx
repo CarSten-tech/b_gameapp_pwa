@@ -213,10 +213,10 @@ export const Nippelboard = () => {
                     debug && "border border-red-500 bg-red-400/20"
                   )}
                   style={{
-                    top: `${region.top + region.height * 0.88}%`,
-                    left: `${region.left}%`,
-                    width: `${region.width}%`,
-                    height: `${region.height * 0.35}%`,
+                    top: `${region.top + region.height * 1.08}%`, // Start just below the circular button
+                    left: `${region.left + region.width * 0.05}%`, // Center horizontally within the button width
+                    width: `${region.width * 0.9}%`,
+                    height: `${region.height * 0.24}%`, // Height of the white label field
                   }}
                 >
                   <span 
