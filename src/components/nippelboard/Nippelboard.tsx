@@ -207,7 +207,7 @@ export const Nippelboard = () => {
           ))}
 
           {/* 2. Decoupled Labels */}
-          {LABEL_REGIONS.map((region, i) => SOUND_LABELS[i] && (
+          {LABEL_REGIONS.map((region, i) => (
             <div
               key={`lbl-${i}`}
               className={cn(
@@ -221,19 +221,21 @@ export const Nippelboard = () => {
                 height: `${region.height}%`, 
               }}
             >
-              <span 
-                className="text-zinc-900/95 -rotate-1 select-none text-center w-full"
-                style={{
-                  fontFamily: 'var(--font-rock-salt), cursive',
-                  fontSize: 'min(2.8vw, 2.8vh)',
-                  fontWeight: 400,
-                  letterSpacing: '-0.01em',
-                  lineHeight: 1,
-                  textShadow: '0.2px 0.2px 0px rgba(0,0,0,0.2)'
-                }}
-              >
-                {SOUND_LABELS[i]}
-              </span>
+              {SOUND_LABELS[i] && (
+                <span 
+                  className="text-zinc-900/95 -rotate-1 select-none text-center w-full"
+                  style={{
+                    fontFamily: 'var(--font-rock-salt), cursive',
+                    fontSize: 'min(2.8vw, 2.8vh)',
+                    fontWeight: 400,
+                    letterSpacing: '-0.01em',
+                    lineHeight: 1,
+                    textShadow: '0.2px 0.2px 0px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  {SOUND_LABELS[i]}
+                </span>
+              )}
             </div>
           ))}
         </div>
