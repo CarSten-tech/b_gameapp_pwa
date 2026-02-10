@@ -208,7 +208,10 @@ export const Nippelboard = () => {
               {/* Label Text */}
               {SOUND_LABELS[i] && (
                 <div
-                  className="absolute pointer-events-none flex items-center justify-center"
+                  className={cn(
+                    "absolute pointer-events-none flex items-center justify-center",
+                    debug && "border border-red-500 bg-red-400/20"
+                  )}
                   style={{
                     top: `${region.top + region.height * 0.88}%`,
                     left: `${region.left}%`,
