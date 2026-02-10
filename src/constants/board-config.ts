@@ -53,7 +53,11 @@ const VERTICAL_OFFSETS: Record<number, number> = {
   2: -1.8,
   3: -1.8,
   4: -1.8,
-  7: -1.5,   // Middle row, 3rd button from left
+  5: -1.1,   // Middle row (3mm up)
+  6: -1.1,
+  7: -1.1,
+  8: -1.1,
+  9: -1.1,
   10: -2.5,  // Bottom row
   11: -2.5,
   12: -2.5,
@@ -67,6 +71,11 @@ const HORIZONTAL_OFFSETS: Record<number, number> = {
   2: -1.1,
   3: -1.1,
   4: -1.1,
+  5: -0.5,   // Middle row (1.5mm left)
+  6: -0.5,
+  7: -0.5,
+  8: -0.5,
+  9: -0.5,
 };
 
 export const BUTTON_REGIONS: ButtonRegion[] = calculateRegions().map((region, i) => {
