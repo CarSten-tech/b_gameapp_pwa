@@ -210,10 +210,10 @@ export const Nippelboard = () => {
                 <div
                   className="absolute pointer-events-none flex items-center justify-center"
                   style={{
-                    top: `${region.top + region.height * 0.77}%`, // Nudged for perfect alignment
+                    top: `${region.top + region.height * 0.88}%`,
                     left: `${region.left}%`,
                     width: `${region.width}%`,
-                    height: `${region.height * 0.4}%`,
+                    height: `${region.height * 0.35}%`,
                   }}
                 >
                   <span 
