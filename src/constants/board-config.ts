@@ -155,5 +155,5 @@ export const SOUND_MAPPING: Record<number, string> = {
 
 // Custom handwriting labels
 export const SOUND_LABELS: Record<number, string> = {
-  0: 'ABCDEFGHIJK',
+  0: 'wasn los hier',
 };
