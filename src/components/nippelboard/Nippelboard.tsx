@@ -206,7 +206,7 @@ export const Nippelboard = () => {
             >
               {debug && (
                 <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-[min(3vw,24px)] pointer-events-none">
-                  {i}
+                  {i + 1}
                 </span>
               )}
             </button>
