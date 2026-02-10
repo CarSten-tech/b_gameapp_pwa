@@ -8,6 +8,7 @@ interface GameState {
   isAssetsLoaded: boolean;
   showPhone: boolean;
   dialedNumber: string;
+  callStatus: 'idle' | 'dialing' | 'connected';
   setView: (view: string) => void;
   setAssetsLoaded: (loaded: boolean) => void;
   toggleDebug: () => void;
@@ -16,6 +17,9 @@ interface GameState {
   setActiveButton: (index: number | null) => void;
   togglePhone: (show: boolean) => void;
   dialKey: (key: string) => void;
+  resetDialedNumber: () => void;
+  deleteLastDigit: () => void;
+  setCallStatus: (status: 'idle' | 'dialing' | 'connected') => void;
 }
 
 export const useGameStore = create<GameState>((set) => ({
@@ -26,6 +30,7 @@ export const useGameStore = create<GameState>((set) => ({
   isAssetsLoaded: false,
   showPhone: false,
   dialedNumber: '',
+  callStatus: 'idle',
   setView: (view) => set({ currentView: view }),
   setAssetsLoaded: (loaded) => set({ isAssetsLoaded: loaded }),
   toggleDebug: () => set((state) => ({ debugMode: !state.debugMode })),
@@ -40,4 +45,9 @@ export const useGameStore = create<GameState>((set) => ({
   dialKey: (key) => set((state) => ({ 
     dialedNumber: (state.dialedNumber + key).slice(-20) // Limit length
   })),
+  resetDialedNumber: () => set({ dialedNumber: '' }),
+  deleteLastDigit: () => set((state) => ({
+    dialedNumber: state.dialedNumber.slice(0, -1)
+  })),
+  setCallStatus: (status) => set({ callStatus: status }),
 }));

@@ -52,10 +52,9 @@ class AudioEngine {
    * @param key 0-9, *, #
    * @param duration seconds
    */
-  playDTMF(key: string, duration: number = 0.2) {
+  playDTMF(key: string, duration: number = 0.15) {
     const ctx = this.init();
     
-    // DTMF frequencies
     const freqMap: Record<string, [number, number]> = {
       '1': [697, 1209], '2': [697, 1336], '3': [697, 1477],
       '4': [770, 1209], '5': [770, 1336], '6': [770, 1477],
@@ -66,26 +65,52 @@ class AudioEngine {
     const freqs = freqMap[key];
     if (!freqs) return;
 
-    const gainNode = ctx.createGain();
-    gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-    gainNode.connect(ctx.destination);
+    const now = ctx.currentTime;
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(0, now);
+    masterGain.gain.linearRampToValueAtTime(0.12, now + 0.005); // Rapid attack
+    masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    masterGain.connect(ctx.destination);
 
+    // 1. DTMF Tones (Dual Sine)
     const osc1 = ctx.createOscillator();
     const osc2 = ctx.createOscillator();
-
     osc1.type = 'sine';
     osc2.type = 'sine';
-    osc1.frequency.setValueAtTime(freqs[0], ctx.currentTime);
-    osc2.frequency.setValueAtTime(freqs[1], ctx.currentTime);
+    osc1.frequency.setValueAtTime(freqs[0], now);
+    osc2.frequency.setValueAtTime(freqs[1], now);
 
-    osc1.connect(gainNode);
-    osc2.connect(gainNode);
+    // 2. Add subtle harmonics for an "analog" feel
+    const oscHarmonic = ctx.createOscillator();
+    const harmonicGain = ctx.createGain();
+    oscHarmonic.type = 'sine';
+    oscHarmonic.frequency.setValueAtTime(freqs[0] * 2, now);
+    harmonicGain.gain.setValueAtTime(0.02, now);
+    oscHarmonic.connect(harmonicGain);
+    harmonicGain.connect(masterGain);
 
-    osc1.start();
-    osc2.start();
-    osc1.stop(ctx.currentTime + duration);
-    osc2.stop(ctx.currentTime + duration);
+    // 3. Mechanical "Click" (High freq burst)
+    const clickOsc = ctx.createOscillator();
+    const clickGain = ctx.createGain();
+    clickOsc.type = 'square'; // Sharper sound
+    clickOsc.frequency.setValueAtTime(2000, now);
+    clickGain.gain.setValueAtTime(0.015, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+    clickOsc.connect(clickGain);
+    clickGain.connect(ctx.destination);
+
+    osc1.connect(masterGain);
+    osc2.connect(masterGain);
+
+    osc1.start(now);
+    osc2.start(now);
+    oscHarmonic.start(now);
+    clickOsc.start(now);
+
+    osc1.stop(now + duration);
+    osc2.stop(now + duration);
+    oscHarmonic.stop(now + duration);
+    clickOsc.stop(now + 0.03);
   }
 
   getDuration(id: number): number {

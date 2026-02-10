@@ -18,6 +18,7 @@ const rockSalt = Rock_Salt({
   variable: "--font-rock-salt",
 });
 
+
 export const metadata: Metadata = {
   title: "Point & Click Game",
   description: "Interactive PWA Game",
