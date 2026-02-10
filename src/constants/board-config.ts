@@ -89,7 +89,16 @@ const VERTICAL_OFFSETS_LABELS: Record<number, number> = {
 };
 
 const HORIZONTAL_OFFSETS_LABELS: Record<number, number> = {
-  // Global baseline is now optimized, add micro-tweaks here if needed
+  3: -0.36,  // Row 1, Label 4: 1mm left
+  4: -0.90,  // Row 1, Label 5: 2.5mm left
+  5: -0.72,  // Row 2, Label 1: 2mm left
+  6: -0.72,  // Row 2, Label 2: 2mm left
+  7: -0.90,  // Row 2, Label 3: 2.5mm left
+  8: -1.26,  // Row 2, Label 4: 3.5mm left
+  9: -1.26,  // Row 2, Label 5: 3.5mm left
+  12: -0.54, // Row 3, Label 3: 1.5mm left
+  13: -0.54, // Row 3, Label 4: 1.5mm left
+  14: -1.08, // Row 3, Label 5: 3mm left
 };
 
 const WIDTH_OFFSETS_LABELS: Record<number, number> = {
