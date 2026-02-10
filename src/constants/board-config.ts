@@ -85,11 +85,19 @@ const HORIZONTAL_OFFSETS: Record<number, number> = {
 
 // Independent Label Offsets
 const VERTICAL_OFFSETS_LABELS: Record<number, number> = {
-  // Add label-specific vertical adjustments here
+  0: -0.72, // 2mm up
 };
 
 const HORIZONTAL_OFFSETS_LABELS: Record<number, number> = {
-  // Add label-specific horizontal adjustments here
+  0: 0.72,  // Start 2mm further right (shortening left side)
+};
+
+const WIDTH_OFFSETS_LABELS: Record<number, number> = {
+  0: -1.44, // Total 4mm shorter (2mm from each side)
+};
+
+const HEIGHT_OFFSETS_LABELS: Record<number, number> = {
+  // Add label-specific height adjustments here
 };
 
 // Final Button Regions (with per-button offsets)
@@ -113,6 +121,8 @@ export const LABEL_REGIONS: ButtonRegion[] = calculateRegions().map((region, i) 
   // 2. Independent label-specific micro-offsets
   const vOffsetLbl = VERTICAL_OFFSETS_LABELS[i] || 0;
   const hOffsetLbl = HORIZONTAL_OFFSETS_LABELS[i] || 0;
+  const wOffsetLbl = WIDTH_OFFSETS_LABELS[i] || 0;
+  const hSizeOffsetLbl = HEIGHT_OFFSETS_LABELS[i] || 0;
 
   const baseTop = region.top + vOffsetBtn;
   const baseLeft = region.left + hOffsetBtn;
@@ -120,8 +130,8 @@ export const LABEL_REGIONS: ButtonRegion[] = calculateRegions().map((region, i) 
   return {
     top: baseTop + region.height * 0.96 + vOffsetLbl,
     left: baseLeft + region.width * 0.02 + hOffsetLbl,
-    width: region.width * 0.96,
-    height: region.height * 0.20
+    width: region.width * 0.96 + wOffsetLbl,
+    height: region.height * 0.20 + hSizeOffsetLbl
   };
 });
 
