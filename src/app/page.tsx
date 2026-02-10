@@ -1,12 +1,10 @@
-import { Nippelboard } from '@/components/nippelboard/Nippelboard';
-import { OrientationGuard } from '@/components/nippelboard/OrientationGuard';
+import { GameContainer } from '@/components/engine/GameContainer';
+import { ViewSwitcher } from '@/components/engine/ViewSwitcher';
 
 export default function Home() {
   return (
-    <main className="h-screen w-screen bg-black overflow-hidden touch-none selection:none">
-      <OrientationGuard>
-        <Nippelboard />
-      </OrientationGuard>
-    </main>
+    <GameContainer>
+      <ViewSwitcher />
+    </GameContainer>
   );
 }

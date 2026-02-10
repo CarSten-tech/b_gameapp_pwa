@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
+import Image from 'next/image';
 import { useGameStore } from '@/store/game-store';
 import { useAudioEngine } from '@/hooks/use-audio-engine';
 import { cn } from '@/lib/utils';
 import { BUTTON_REGIONS, LABEL_REGIONS, SOUND_MAPPING, SOUND_LABELS } from '@/constants/board-config';
-import { Bug } from 'lucide-react';
+import { Bug, ArrowLeft } from 'lucide-react';
 
 /**
  * Calculates where object-cover actually renders the image.
@@ -38,11 +39,13 @@ function getRenderedImageBounds(
   return { x, y, width: renderedW, height: renderedH };
 }
 
-export const Nippelboard = () => {
-  const { activeButtonIndex, setActiveButton } = useGameStore();
+interface NippelboardProps {
+  onBack?: () => void;
+}
 
-  const [loading, setLoading] = useState(true);
-  const [debug, setDebug] = useState(false);
+export const Nippelboard = ({ onBack }: NippelboardProps) => {
+  const { activeButtonIndex, setActiveButton, debugMode, toggleDebug, isAssetsLoaded } = useGameStore();
+
   const [imageBounds, setImageBounds] = useState<{
     x: number; y: number; width: number; height: number;
   } | null>(null);
@@ -53,7 +56,8 @@ export const Nippelboard = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { loadSoundFromUrl, playSound, isLoaded, initContext } = useAudioEngine();
 
-  // Load static sounds
+  // Load static sounds (Pre-loading is handled by the browser cache since GameContainer doesn't block audio, 
+  // but we still need the audioEngine to load them into its context)
   useEffect(() => {
     const load = async () => {
       try {
@@ -64,20 +68,17 @@ export const Nippelboard = () => {
             console.error(`Failed to load sound ${id}:`, e);
           }
         });
-        const timeout = new Promise((r) => setTimeout(r, 5000));
-        await Promise.race([Promise.all(promises), timeout]);
+        await Promise.all(promises);
       } catch (e) {
         console.error('Sound loading error:', e);
-      } finally {
-        setLoading(false);
       }
     };
-    load();
-  }, [loadSoundFromUrl]);
+    if (isAssetsLoaded) load();
+  }, [loadSoundFromUrl, isAssetsLoaded]);
 
   // Get natural image dimensions
   useEffect(() => {
-    const img = new Image();
+    const img = new window.Image();
     img.onload = () => setImageNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
     img.src = '/assets/images/board_off.webp';
   }, []);
@@ -100,15 +101,11 @@ export const Nippelboard = () => {
 
   const handleButtonClick = async (index: number) => {
     await initContext();
-
     setActiveButton(index);
 
     if (isLoaded(index)) {
-      // Play the sound and turn off glow when it ends
-      await playSound(index, () => setActiveButton(null));
-    } else {
-      // No sound mapped — just show glow for 300ms
-      setTimeout(() => setActiveButton(null), 300);
+      // Play the sound
+      await playSound(index);
     }
   };
 
@@ -130,8 +127,9 @@ export const Nippelboard = () => {
 
     return {
       opacity: 1,
-      WebkitMaskImage: `radial-gradient(circle at ${cx}% ${cy}%, black 0%, black ${radius * 0.6}%, transparent ${radius}%)`,
-      maskImage: `radial-gradient(circle at ${cx}% ${cy}%, black 0%, black ${radius * 0.6}%, transparent ${radius}%)`,
+      WebkitMaskImage: `radial-gradient(circle at ${cx}% ${cy}%, white 0%, white ${radius * 0.6}%, transparent ${radius}%)`,
+      maskImage: `radial-gradient(circle at ${cx}% ${cy}%, white 0%, white ${radius * 0.6}%, transparent ${radius}%)`,
+      pointerEvents: 'none',
     };
   };
 
@@ -141,17 +139,21 @@ export const Nippelboard = () => {
       className="relative w-screen h-screen overflow-hidden bg-black touch-none select-none"
     >
       {/* Layer 0: Blurred background to fill screen */}
-      <img
+      <Image
         src="/assets/images/board_off.webp"
         alt=""
-        className="absolute inset-0 w-full h-full object-cover blur-3xl scale-110 opacity-40 z-0 pointer-events-none"
+        fill
+        priority
+        className="object-cover blur-3xl scale-110 opacity-40 z-0 pointer-events-none"
       />
 
       {/* Layer 1: Base image (Full visibility) */}
-      <img
+      <Image
         src="/assets/images/board_off.webp"
         alt="Board"
-        className="absolute inset-0 w-full h-full object-contain pointer-events-none z-10"
+        fill
+        priority
+        className="object-contain pointer-events-none z-10"
       />
 
       {/* Layer 2: Glow image with soft radial mask */}
@@ -164,12 +166,15 @@ export const Nippelboard = () => {
             width: imageBounds.width,
             height: imageBounds.height,
             ...getGlowMask(activeButtonIndex),
+            pointerEvents: 'none',
           }}
         >
-          <img
+          <Image
             src="/assets/images/board_on.webp"
             alt="Board Glow"
-            className="w-full h-full object-contain"
+            fill
+            priority
+            className="object-contain pointer-events-none"
           />
         </div>
       )}
@@ -189,10 +194,13 @@ export const Nippelboard = () => {
           {BUTTON_REGIONS.map((region, i) => (
             <button
               key={`btn-${i}`}
-              onClick={() => handleButtonClick(i)}
+              onPointerDown={() => handleButtonClick(i)}
+              onPointerUp={() => setActiveButton(null)}
+              onPointerLeave={() => setActiveButton(null)}
               className={cn(
-                'absolute rounded-full transition-transform active:scale-95 touch-manipulation outline-none scale-[0.72]',
-                debug && 'bg-red-500/25 border-2 border-red-400',
+                'absolute rounded-full transition-transform touch-manipulation outline-none scale-[0.72]',
+                activeButtonIndex === i ? 'scale-[0.68] brightness-125' : 'scale-[0.72]',
+                debugMode && 'bg-red-500/25 border-2 border-red-400',
                 !isLoaded(i) && 'cursor-default'
               )}
               style={{
@@ -204,7 +212,7 @@ export const Nippelboard = () => {
               }}
               aria-label={`Pad ${i + 1}`}
             >
-              {debug && (
+              {debugMode && (
                 <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-[min(3vw,24px)] pointer-events-none">
                   {i + 1}
                 </span>
@@ -218,7 +226,7 @@ export const Nippelboard = () => {
               key={`lbl-${i}`}
               className={cn(
                 "absolute pointer-events-none flex items-center justify-center",
-                debug && "border border-red-500 bg-red-400/20"
+                debugMode && "border border-red-500 bg-red-400/20"
               )}
               style={{
                 top: `${region.top}%`,
@@ -247,29 +255,31 @@ export const Nippelboard = () => {
         </div>
       )}
 
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-4 left-4 z-40 p-3 rounded-full bg-zinc-900/80 text-zinc-400 hover:text-white shadow-lg transition-all border border-white/10"
+          aria-label="Zurück zum Schreibtisch"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+      )}
+
       {/* Debug toggle */}
       <button
-        onClick={() => setDebug(!debug)}
+        onClick={toggleDebug}
         className={cn(
           'absolute top-4 right-4 z-40 p-3 rounded-full shadow-lg transition-all border border-white/10',
-          debug ? 'bg-blue-600 text-white' : 'bg-zinc-900/80 text-zinc-400 hover:text-white'
+          debugMode ? 'bg-blue-600 text-white' : 'bg-zinc-900/80 text-zinc-400 hover:text-white'
         )}
         aria-label="Toggle Debug Mode"
       >
         <Bug className="w-5 h-5" />
       </button>
 
-      {/* Loading overlay */}
-      {loading && (
-        <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-10 h-10 border-4 border-zinc-700 border-t-white rounded-full animate-spin" />
-            <p className="text-zinc-500 font-medium tracking-widest uppercase text-xs">
-              Nippelboard lädt...
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Loading overlay removed - handled globally by GameContainer */}
     </div>
   );
 };

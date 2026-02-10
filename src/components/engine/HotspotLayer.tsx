@@ -1,5 +1,8 @@
 'use client';
 
+import { useGameStore } from '@/store/game-store';
+import { cn } from '@/lib/utils';
+
 interface HotspotProps {
   x: number; // percentage
   y: number; // percentage
@@ -10,10 +13,15 @@ interface HotspotProps {
 }
 
 export const Hotspot = ({ x, y, width, height, onClick, label }: HotspotProps) => {
+  const debugMode = useGameStore((state) => state.debugMode);
+
   return (
     <button
       onClick={onClick}
-      className="absolute cursor-pointer border-2 border-transparent hover:border-yellow-400/50 transition-colors group"
+      className={cn(
+        "absolute cursor-pointer transition-colors group",
+        debugMode ? "border-2 border-dashed border-red-500 bg-red-500/10" : "border-2 border-transparent hover:border-yellow-400/50"
+      )}
       style={{
         left: `${x}%`,
         top: `${y}%`,
@@ -23,7 +31,16 @@ export const Hotspot = ({ x, y, width, height, onClick, label }: HotspotProps) =
       aria-label={label || 'Hotspot'}
     >
       {/* Visual aid for debugging, can be removed later */}
-      <div className="hidden group-hover:block absolute inset-0 bg-yellow-400/10" />
+      <div className={cn(
+        "absolute inset-0 bg-yellow-400/10",
+        debugMode ? "flex items-center justify-center" : "hidden group-hover:block"
+      )}>
+        {debugMode && (
+          <span className="text-red-500 text-[10px] font-bold truncate px-1">
+            {label || 'Hotspot'}
+          </span>
+        )}
+      </div>
     </button>
   );
 };
