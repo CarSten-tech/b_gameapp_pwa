@@ -180,24 +180,25 @@ export const Nippelboard = ({ onBack }: NippelboardProps) => {
         console.warn('Finish current recording first.');
       }
     } else {
-      // Play mode
-      console.log(`Activating button ${index}`);
+      // Play mode (Intro + Sound)
+      console.log(`Activating button ${index} with Intro`);
       setActiveButton(index);
-      if (isLoaded(index)) {
-        await playSound(index, () => {
-          console.log(`Sound ended for ${index}, checking active state...`);
-          // Check current state directly from store to avoid closure staleness
+      
+      // Check if both intro(999) and sound(index) are loaded
+      if (isLoaded(999) && isLoaded(index)) {
+        await playSequence([999, index], () => {
+          console.log(`Sequence ended for ${index}, checking active state...`);
           const current = useGameStore.getState().activeButtonIndex;
           if (current === index) {
-            console.log(`Deactivating button ${index}`);
-            // Use the action from the store instance we are in, or just fetch it again?
-            // Safer to use useGameStore.getState().setActiveButton(null) if we want to be 100% sure,
-            // or just call setActiveButton(null) since it's stable.
-            // But we must NOT pass a function.
             setActiveButton(null);
-          } else {
-            console.log(`Active button changed (is ${current}), keeping it.`);
           }
+        });
+      } else if (isLoaded(index)) {
+        // Fallback if intro missing: just play sound
+        console.warn("Intro not loaded, playing sound only");
+        await playSound(index, () => {
+             const current = useGameStore.getState().activeButtonIndex;
+             if (current === index) setActiveButton(null);
         });
       } else {
         console.warn(`Sound ${index} not loaded?`);

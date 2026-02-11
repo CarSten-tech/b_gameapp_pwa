@@ -52,6 +52,42 @@ export const useAudioEngine = () => {
     source.start(0);
     console.log(`Playing sound ${id}, duration: ${buffer.duration}`);
     return buffer.duration;
+    return buffer.duration;
+  }, [initContext]);
+
+  const playSequence = useCallback(async (ids: number[], onEnded?: () => void) => {
+    const ctx = await initContext();
+    let startTime = ctx.currentTime + 0.05; // Small offset to ensure clean start
+    
+    // 1. Verify all buffers exist
+    for (const id of ids) {
+      if (!buffers.current.has(id)) {
+        console.warn(`Cannot play sequence: sound ${id} missing`);
+        if (onEnded) onEnded();
+        return;
+      }
+    }
+
+    // 2. Schedule
+    ids.forEach((id, index) => {
+      const buffer = buffers.current.get(id)!;
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      
+      source.start(startTime);
+      console.log(`Scheduled sound ${id} at ${startTime}`);
+      startTime += buffer.duration;
+
+      // Only last sound triggers onEnded
+      if (index === ids.length - 1 && onEnded) {
+        source.addEventListener('ended', () => {
+          console.log(`Sequence finished at sound ${id}`);
+          onEnded();
+        });
+      }
+    });
+
   }, [initContext]);
 
   const isLoaded = useCallback((id: number) => {
@@ -62,6 +98,7 @@ export const useAudioEngine = () => {
     loadSound,
     loadSoundFromUrl,
     playSound,
+    playSequence, // Exported
     isLoaded,
     initContext
   };
