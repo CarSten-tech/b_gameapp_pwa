@@ -46,6 +46,13 @@ interface NippelboardProps {
 export const Nippelboard = ({ onBack }: NippelboardProps) => {
   const { activeButtonIndex, setActiveButton, debugMode, toggleDebug, isAssetsLoaded } = useGameStore();
 
+  // === RECORDING STATE ===
+  const [isRecordingMode, setIsRecordingMode] = useState(false);
+  const [recordingBtnIndex, setRecordingBtnIndex] = useState<number | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  // ... (image bounds state) ...
   const [imageBounds, setImageBounds] = useState<{
     x: number; y: number; width: number; height: number;
   } | null>(null);
@@ -54,28 +61,47 @@ export const Nippelboard = ({ onBack }: NippelboardProps) => {
   } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const { loadSoundFromUrl, playSound, isLoaded, initContext } = useAudioEngine();
+  const { loadSound, loadSoundFromUrl, playSound, isLoaded, initContext } = useAudioEngine();
 
-  // Load static sounds (Pre-loading is handled by the browser cache since GameContainer doesn't block audio, 
-  // but we still need the audioEngine to load them into its context)
+  // === LOAD SOUNDS (Static + Custom) ===
   useEffect(() => {
     const load = async () => {
+      if (!isAssetsLoaded) return;
+      
       try {
-        const promises = Object.entries(SOUND_MAPPING).map(async ([id, fn]) => {
+        // 1. Load default static sounds
+        const staticPromises = Object.entries(SOUND_MAPPING).map(async ([id, fn]) => {
           try {
             await loadSoundFromUrl(parseInt(id), `/assets/audio/${fn}`);
           } catch (e) {
-            console.error(`Failed to load sound ${id}:`, e);
+            console.error(`Failed to load default sound ${id}:`, e);
           }
         });
-        await Promise.all(promises);
+        await Promise.all(staticPromises);
+
+        // 2. Load custom recordings from DB (overrides defaults)
+        const { db } = await import('@/lib/db');
+        const customIds = await db.getAllSoundIds();
+        
+        for (const storageKey of customIds) {
+          const id = parseInt(storageKey.replace('sound_', ''));
+          if (!isNaN(id)) {
+            const blob = await db.getSound(id);
+            if (blob) {
+              await loadSound(id, blob);
+              console.log(`Loaded custom sound for button ${id}`);
+            }
+          }
+        }
+
       } catch (e) {
         console.error('Sound loading error:', e);
       }
     };
-    if (isAssetsLoaded) load();
-  }, [loadSoundFromUrl, isAssetsLoaded]);
+    load();
+  }, [loadSound, loadSoundFromUrl, isAssetsLoaded]);
 
+  // ... (Image bounds effects remain unchanged) ...
   // Get natural image dimensions
   useEffect(() => {
     const img = new window.Image();
@@ -99,16 +125,88 @@ export const Nippelboard = ({ onBack }: NippelboardProps) => {
     return () => observer.disconnect();
   }, [imageNaturalSize]);
 
-  const handleButtonClick = async (index: number) => {
-    await initContext();
-    setActiveButton(index);
+  // === RECORDING LOGIC ===
+  const startRecording = async (index: number) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
 
-    if (isLoaded(index)) {
-      // Play the sound
-      await playSound(index);
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        // Save to DB
+        const { db } = await import('@/lib/db');
+        await db.saveSound(index, blob);
+        // Load into engine immediately
+        await loadSound(index, blob);
+        console.log(`Saved recording for button ${index}`);
+        
+        // Stop all tracks to release mic
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setRecordingBtnIndex(index);
+    } catch (err) {
+      console.error('Error accessing microphone:', err);
+      alert('Mikrofon-Zugriff verweigert oder nicht verfügbar.');
     }
   };
 
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setRecordingBtnIndex(null);
+      mediaRecorderRef.current = null;
+    }
+  };
+
+  const handleButtonClick = async (index: number) => {
+    await initContext();
+
+    if (isRecordingMode) {
+      // Toggle recording
+      if (recordingBtnIndex === index) {
+        stopRecording();
+      } else if (recordingBtnIndex === null) {
+        startRecording(index);
+      } else {
+        // Stop current and start new? For now just block.
+        console.warn('Finish current recording first.');
+      }
+    } else {
+      // Play mode
+      console.log(`Activating button ${index}`);
+      setActiveButton(index);
+      if (isLoaded(index)) {
+        await playSound(index, () => {
+          console.log(`Sound ended for ${index}, checking active state...`);
+          // Check current state directly from store to avoid closure staleness
+          const current = useGameStore.getState().activeButtonIndex;
+          if (current === index) {
+            console.log(`Deactivating button ${index}`);
+            // Use the action from the store instance we are in, or just fetch it again?
+            // Safer to use useGameStore.getState().setActiveButton(null) if we want to be 100% sure,
+            // or just call setActiveButton(null) since it's stable.
+            // But we must NOT pass a function.
+            setActiveButton(null);
+          } else {
+            console.log(`Active button changed (is ${current}), keeping it.`);
+          }
+        });
+      } else {
+        console.warn(`Sound ${index} not loaded?`);
+        setTimeout(() => setActiveButton(null), 200);
+      }
+    }
+  };
+
+  // ... (getGlowMask unchanged) ...
   /**
    * Build a soft radial-gradient mask centered on the active button.
    * This creates a natural, feathered glow instead of a hard circle edge.
@@ -195,13 +293,14 @@ export const Nippelboard = ({ onBack }: NippelboardProps) => {
             <button
               key={`btn-${i}`}
               onPointerDown={() => handleButtonClick(i)}
-              onPointerUp={() => setActiveButton(null)}
-              onPointerLeave={() => setActiveButton(null)}
+              // Removed onPointerUp/Leave to keep glow during playback
               className={cn(
                 'absolute rounded-full transition-transform touch-manipulation outline-none scale-[0.72]',
                 activeButtonIndex === i ? 'scale-[0.68] brightness-125' : 'scale-[0.72]',
+                isRecordingMode && 'cursor-pointer',
+                recordingBtnIndex === i && 'animate-pulse bg-red-500/50', // Visual feedback for recording
                 debugMode && 'bg-red-500/25 border-2 border-red-400',
-                !isLoaded(i) && 'cursor-default'
+                !isLoaded(i) && !isRecordingMode && 'cursor-default'
               )}
               style={{
                 top: `${region.top}%`,
@@ -215,6 +314,9 @@ export const Nippelboard = ({ onBack }: NippelboardProps) => {
               {debugMode && (
                 <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-[min(3vw,24px)] pointer-events-none">
                   {i + 1}
+                  {isRecordingMode && recordingBtnIndex === i && (
+                    <span className="absolute -top-4 text-xs text-red-500">REC</span>
+                  )}
                 </span>
               )}
             </button>
@@ -267,16 +369,24 @@ export const Nippelboard = ({ onBack }: NippelboardProps) => {
         </button>
       )}
 
-      {/* Debug toggle */}
+      {/* Record Switch / Toggle (Replaces Debug) */}
       <button
-        onClick={toggleDebug}
+        onClick={() => {
+          if (isRecordingMode) {
+            if (recordingBtnIndex !== null) stopRecording();
+            setIsRecordingMode(false);
+          } else {
+            setIsRecordingMode(true);
+          }
+        }}
         className={cn(
-          'absolute top-4 right-4 z-40 p-3 rounded-full shadow-lg transition-all border border-white/10',
-          debugMode ? 'bg-blue-600 text-white' : 'bg-zinc-900/80 text-zinc-400 hover:text-white'
+          'absolute top-4 right-4 z-40 px-4 py-2 rounded-full shadow-lg transition-all border border-white/10 font-bold text-sm',
+          isRecordingMode 
+            ? 'bg-red-600 text-white animate-pulse' 
+            : 'bg-zinc-900/80 text-zinc-400 hover:text-white'
         )}
-        aria-label="Toggle Debug Mode"
       >
-        <Bug className="w-5 h-5" />
+        {isRecordingMode ? '● REC' : 'REC'}
       </button>
 
       {/* Loading overlay removed - handled globally by GameContainer */}

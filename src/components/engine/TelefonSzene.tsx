@@ -29,6 +29,10 @@ export const TelefonSzene = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ringbackNodesRef = useRef<{ oscs: OscillatorNode[]; gain: GainNode; ctx: AudioContext } | null>(null);
   const callTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const dialTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Jumpscare state
+  const [showJumpscare, setShowJumpscare] = React.useState(false);
 
   // === CLEANUP: Stop all audio ===
   const stopAllAudio = useCallback(() => {
@@ -54,6 +58,7 @@ export const TelefonSzene = () => {
       callTimeoutRef.current = null;
     }
     setCallStatus('idle');
+    setShowJumpscare(false);
   }, [setCallStatus]);
 
   // === RINGBACK TONE (425 Hz, German standard) ===
@@ -87,14 +92,17 @@ export const TelefonSzene = () => {
 
   // === CALL SEQUENCE ===
   const handleCall = useCallback((number: string) => {
+    // Special handling for 666 to ensure it follows the same sequence
+    const isJumpscare = number.endsWith('666');
     const audioFile = PHONE_DIRECTORY[number];
-    if (!audioFile) return;
+    
+    if (!audioFile && !isJumpscare) return;
 
     // Start dialing phase
     setCallStatus('dialing');
     playRingbackTone();
 
-    // After 2 seconds: stop ringback, play actual audio
+    // After 2 seconds: stop ringback, play actual audio or show video
     callTimeoutRef.current = setTimeout(() => {
       // Clean up ringback
       if (ringbackNodesRef.current) {
@@ -107,46 +115,47 @@ export const TelefonSzene = () => {
       // Transition to connected
       setCallStatus('connected');
 
-      // Play the actual audio file
-      const audio = new Audio(audioFile);
-      audioRef.current = audio;
-      audio.play().catch(() => { /* autoplay blocked */ });
+      if (isJumpscare) {
+        setShowJumpscare(true);
+      } else if (audioFile) {
+        // Play the actual audio file
+        const audio = new Audio(audioFile);
+        audioRef.current = audio;
+        audio.play().catch(() => { /* autoplay blocked */ });
 
-      // When audio ends, hang up
-      audio.addEventListener('ended', () => {
-        setCallStatus('idle');
-        resetDialedNumber();
-        audioRef.current = null;
-      });
+        // When audio ends, hang up
+        audio.addEventListener('ended', () => {
+          setCallStatus('idle');
+          resetDialedNumber();
+          audioRef.current = null;
+        });
+      }
     }, 2000);
   }, [setCallStatus, playRingbackTone, resetDialedNumber]);
 
-  // === CHECK FOR KNOWN NUMBERS ===
+  // === CHECK FOR KNOWN NUMBERS (Debounced) ===
   useEffect(() => {
-    if (callStatus !== 'idle') return; // Don't check while in a call
-    if (dialedNumber.length >= 3) {
-      // Check phone directory
-      if (PHONE_DIRECTORY[dialedNumber]) {
-        handleCall(dialedNumber);
-        return;
-      }
-      // Legacy 666 easter egg
-      if (dialedNumber.endsWith('666')) {
-        const ctx = audioEngine.init();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.frequency.setValueAtTime(100, ctx.currentTime);
-        osc.type = 'sawtooth';
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 2);
-        setTimeout(resetDialedNumber, 2000);
-      }
+    if (callStatus !== 'idle') return;
+
+    // Clear any pending check
+    if (dialTimeoutRef.current) {
+      clearTimeout(dialTimeoutRef.current);
     }
-  }, [dialedNumber, callStatus, handleCall, resetDialedNumber]);
+
+    // Only set timeout if we have input
+    if (dialedNumber.length > 0) {
+      dialTimeoutRef.current = setTimeout(() => {
+        // Check phone directory OR jumpscare
+        if (PHONE_DIRECTORY[dialedNumber] || dialedNumber.endsWith('666')) {
+          handleCall(dialedNumber);
+        }
+      }, 1000); // Wait 1 second after last digit
+    }
+
+    return () => {
+      if (dialTimeoutRef.current) clearTimeout(dialTimeoutRef.current);
+    };
+  }, [dialedNumber, callStatus, handleCall]);
 
   // === CLEANUP on scene exit ===
   useEffect(() => {
@@ -193,6 +202,7 @@ export const TelefonSzene = () => {
     <AnimatePresence>
       {showPhone && (
         <motion.div
+          key="phone-scene"
           initial={{ opacity: 0, scale: 0.8, filter: 'blur(10px)' }}
           animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
           exit={{ opacity: 0, scale: 0.8, filter: 'blur(10px)' }}
@@ -261,6 +271,27 @@ export const TelefonSzene = () => {
               <Bug className="w-5 h-5" />
             </button>
           </div>
+        </motion.div>
+      )}
+      {/* Jumpscare Video Overlay */}
+      {showJumpscare && (
+        <motion.div
+          key="jumpscare-video"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[200] bg-black flex items-center justify-center"
+        >
+          <video
+            src="/assets/videos/666_bianca_jumpscare.mp4"
+            autoPlay
+            className="w-full h-full object-cover"
+            onEnded={() => {
+              setShowJumpscare(false);
+              setCallStatus('idle'); // Ensure call status is reset
+              resetDialedNumber();
+            }}
+          />
         </motion.div>
       )}
     </AnimatePresence>

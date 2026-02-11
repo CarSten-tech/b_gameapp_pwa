@@ -43,10 +43,14 @@ export const useAudioEngine = () => {
     source.connect(ctx.destination);
     
     if (onEnded) {
-      source.onended = onEnded;
+      source.addEventListener('ended', () => {
+        console.log(`Sound finished: ${id}`);
+        onEnded();
+      });
     }
 
     source.start(0);
+    console.log(`Playing sound ${id}, duration: ${buffer.duration}`);
     return buffer.duration;
   }, [initContext]);
 
