@@ -295,6 +295,8 @@ export const Nippelboard = ({ onBack }: NippelboardProps) => {
         </div>
       )}
 
+
+
       {/* Layer 3: Interaction Hotspots & Labels */}
       {imageBounds && (
         <div

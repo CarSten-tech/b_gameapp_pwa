@@ -31,8 +31,8 @@ export const TelefonSzene = () => {
   const callTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dialTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Jumpscare state
-  const [showJumpscare, setShowJumpscare] = React.useState(false);
+  // Video Overlay state (previously jumpscare)
+  const [videoOverlaySrc, setVideoOverlaySrc] = React.useState<string | null>(null);
 
   // === CLEANUP: Stop all audio ===
   const stopAllAudio = useCallback(() => {
@@ -58,7 +58,7 @@ export const TelefonSzene = () => {
       callTimeoutRef.current = null;
     }
     setCallStatus('idle');
-    setShowJumpscare(false);
+    setVideoOverlaySrc(null);
   }, [setCallStatus]);
 
   // === RINGBACK TONE (425 Hz, German standard) ===
@@ -92,11 +92,14 @@ export const TelefonSzene = () => {
 
   // === CALL SEQUENCE ===
   const handleCall = useCallback((number: string) => {
-    // Special handling for 666 to ensure it follows the same sequence
-    const isJumpscare = number.endsWith('666');
+    // Check for video triggers
+    let videoUrl: string | null = null;
+    if (number.endsWith('666')) videoUrl = '/assets/videos/666_bianca_jumpscare.mp4';
+    if (number.endsWith('999')) videoUrl = '/assets/videos/999_bianca_engel.mp4';
+
     const audioFile = PHONE_DIRECTORY[number];
     
-    if (!audioFile && !isJumpscare) return;
+    if (!audioFile && !videoUrl) return;
 
     // Start dialing phase
     setCallStatus('dialing');
@@ -115,8 +118,8 @@ export const TelefonSzene = () => {
       // Transition to connected
       setCallStatus('connected');
 
-      if (isJumpscare) {
-        setShowJumpscare(true);
+      if (videoUrl) {
+        setVideoOverlaySrc(videoUrl);
       } else if (audioFile) {
         // Play the actual audio file
         const audio = new Audio(audioFile);
@@ -136,26 +139,23 @@ export const TelefonSzene = () => {
   // === CHECK FOR KNOWN NUMBERS (Debounced) ===
   useEffect(() => {
     if (callStatus !== 'idle') return;
+    if (dialTimeoutRef.current) clearTimeout(dialTimeoutRef.current);
 
-    // Clear any pending check
-    if (dialTimeoutRef.current) {
-      clearTimeout(dialTimeoutRef.current);
-    }
-
-    // Only set timeout if we have input
     if (dialedNumber.length > 0) {
       dialTimeoutRef.current = setTimeout(() => {
-        // Check phone directory OR jumpscare
-        if (PHONE_DIRECTORY[dialedNumber] || dialedNumber.endsWith('666')) {
+        // Trigger if known entry OR ends with special code (666/999)
+        const isSpecial = dialedNumber.endsWith('666') || dialedNumber.endsWith('999');
+        if (PHONE_DIRECTORY[dialedNumber] || isSpecial) {
           handleCall(dialedNumber);
         }
-      }, 1000); // Wait 1 second after last digit
+      }, 1000); 
     }
-
     return () => {
       if (dialTimeoutRef.current) clearTimeout(dialTimeoutRef.current);
     };
   }, [dialedNumber, callStatus, handleCall]);
+
+  // ... (cleanup logic same, except keys)
 
   // === CLEANUP on scene exit ===
   useEffect(() => {
@@ -172,7 +172,7 @@ export const TelefonSzene = () => {
 
   // === KEY HANDLERS (locked during calls) ===
   const handleKeyPress = (key: string) => {
-    if (callStatus !== 'idle') return; // Keys locked during call
+    if (callStatus !== 'idle') return; 
 
     playKey(key);
 
@@ -187,7 +187,7 @@ export const TelefonSzene = () => {
   };
 
   const handleDelete = () => {
-    if (callStatus !== 'idle') return; // Keys locked during call
+    if (callStatus !== 'idle') return; 
     playKey('#');
     deleteLastDigit();
   };
@@ -273,22 +273,22 @@ export const TelefonSzene = () => {
           </div>
         </motion.div>
       )}
-      {/* Jumpscare Video Overlay */}
-      {showJumpscare && (
+      {/* Generic Video Overlay (replaces specific Jumpscare) */}
+      {videoOverlaySrc && (
         <motion.div
-          key="jumpscare-video"
+          key="phone-video-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[200] bg-black flex items-center justify-center"
         >
           <video
-            src="/assets/videos/666_bianca_jumpscare.mp4"
+            src={videoOverlaySrc}
             autoPlay
             className="w-full h-full object-cover"
             onEnded={() => {
-              setShowJumpscare(false);
-              setCallStatus('idle'); // Ensure call status is reset
+              setVideoOverlaySrc(null);
+              setCallStatus('idle'); 
               resetDialedNumber();
             }}
           />
