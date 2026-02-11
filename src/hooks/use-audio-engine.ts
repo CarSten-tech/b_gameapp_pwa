@@ -25,12 +25,19 @@ export const useAudioEngine = () => {
   }, [initContext]);
 
   const loadSoundFromUrl = useCallback(async (id: number, url: string) => {
-    const ctx = await initContext();
-    const response = await fetch(url);
-    const arrayBuffer = await response.arrayBuffer();
-    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-    buffers.current.set(id, audioBuffer);
-    return audioBuffer;
+    try {
+      const ctx = await initContext();
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Fetch failed: ${response.statusText}`);
+      const arrayBuffer = await response.arrayBuffer();
+      const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+      buffers.current.set(id, audioBuffer);
+      console.log(`Successfully loaded sound ${id} from ${url}`);
+      return audioBuffer;
+    } catch (e) {
+      console.error(`Error loading sound ${id} from ${url}:`, e);
+      throw e;
+    }
   }, [initContext]);
 
   const playSound = useCallback(async (id: number, onEnded?: () => void) => {
@@ -51,7 +58,6 @@ export const useAudioEngine = () => {
 
     source.start(0);
     console.log(`Playing sound ${id}, duration: ${buffer.duration}`);
-    return buffer.duration;
     return buffer.duration;
   }, [initContext]);
 

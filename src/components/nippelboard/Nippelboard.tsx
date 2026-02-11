@@ -61,7 +61,7 @@ export const Nippelboard = ({ onBack }: NippelboardProps) => {
   } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const { loadSound, loadSoundFromUrl, playSound, isLoaded, initContext } = useAudioEngine();
+  const { loadSound, loadSoundFromUrl, playSound, playSequence, isLoaded, initContext } = useAudioEngine();
 
   // === LOAD SOUNDS (Static + Custom) ===
   useEffect(() => {
@@ -184,8 +184,25 @@ export const Nippelboard = ({ onBack }: NippelboardProps) => {
       console.log(`Activating button ${index} with Intro`);
       setActiveButton(index);
       
+      let introLoaded = isLoaded(999);
+      
+      // Lazy load intro if missing
+      if (!introLoaded) {
+        console.warn("Intro (999) missing, attempting to load now...");
+        try {
+          await loadSoundFromUrl(999, '/assets/audio/tv-total.mp3');
+          introLoaded = true;
+          console.log("Intro loaded successfully on demand.");
+        } catch (e) {
+          console.error("Failed to lazy load intro:", e);
+        }
+      }
+
+      const soundLoaded = isLoaded(index);
+      console.log(`Check: Intro(999)=${introLoaded}, Sound(${index})=${soundLoaded}`);
+
       // Check if both intro(999) and sound(index) are loaded
-      if (isLoaded(999) && isLoaded(index)) {
+      if (introLoaded && soundLoaded) {
         await playSequence([999, index], () => {
           console.log(`Sequence ended for ${index}, checking active state...`);
           const current = useGameStore.getState().activeButtonIndex;
@@ -193,15 +210,15 @@ export const Nippelboard = ({ onBack }: NippelboardProps) => {
             setActiveButton(null);
           }
         });
-      } else if (isLoaded(index)) {
+      } else if (soundLoaded) {
         // Fallback if intro missing: just play sound
-        console.warn("Intro not loaded, playing sound only");
+        console.warn("Intro (999) NOT loaded, playing sound only. Check console for loading errors.");
         await playSound(index, () => {
              const current = useGameStore.getState().activeButtonIndex;
              if (current === index) setActiveButton(null);
         });
       } else {
-        console.warn(`Sound ${index} not loaded?`);
+        console.warn(`Sound ${index} not loaded at all.`);
         setTimeout(() => setActiveButton(null), 200);
       }
     }
