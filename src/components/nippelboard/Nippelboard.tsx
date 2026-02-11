@@ -252,7 +252,7 @@ export const Nippelboard = ({ onBack }: NippelboardProps) => {
   return (
     <div
       ref={containerRef}
-      className="relative w-screen h-screen overflow-hidden bg-black touch-none select-none"
+      className="relative w-screen h-dvh overflow-hidden bg-black touch-none select-none"
     >
       {/* Layer 0: Blurred background to fill screen */}
       <Image
